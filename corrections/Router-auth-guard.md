@@ -1,9 +1,13 @@
 # Security correction: protect dashboard routes
 
-The current main-repo Router exposes dashboard elements directly from route definitions. Before production, import `ProtectedRoute` and wrap all dashboard routes in one parent route:
+The current main-repo Router exposes dashboard elements directly from route definitions. The repository currently has no `AuthContext` or `useAuth` implementation, so the guard is intentionally adapter-based.
+
+1. Add the project's real Supabase/Auth session provider.
+2. Pass its `loading` and authenticated-user state to `ProtectedRoute`.
+3. Wrap all dashboard routes in one parent route:
 
 ```tsx
-<Route element={<ProtectedRoute />}>
+<Route element={<ProtectedRoute loading={authLoading} authenticated={Boolean(user)} />}>
   <Route path={DASHBOARD_ROUTES.home} element={<DashboardHome />} />
   <Route path={DASHBOARD_ROUTES.offers} element={<DashboardOffers />} />
   <Route path={DASHBOARD_ROUTES.offerNew} element={<OfferWizard />} />

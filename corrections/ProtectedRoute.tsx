@@ -1,15 +1,18 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 
-export function ProtectedRoute() {
-  const { user, loading } = useAuth();
+type ProtectedRouteProps = {
+  loading: boolean;
+  authenticated: boolean;
+};
+
+export function ProtectedRoute({ loading, authenticated }: ProtectedRouteProps) {
   const location = useLocation();
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">جارٍ التحميل…</div>;
   }
 
-  if (!user) {
+  if (!authenticated) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
