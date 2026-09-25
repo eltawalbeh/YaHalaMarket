@@ -1,7 +1,6 @@
 import type { Quote, QuoteStatus } from '@/types';
 import { generateToken } from '@/lib/utils';
-
-const mockQuotes: Quote[] = [];
+import { supabase } from '@/lib/supabase/client';
 
 export interface QuotesService {
   list(filters?: { status?: QuoteStatus; lead_id?: string }): Promise<Quote[]>;
@@ -12,39 +11,59 @@ export interface QuotesService {
   updateStatus(id: string, status: QuoteStatus): Promise<Quote>;
 }
 
+export const mockQuotes: Quote[] = [];
+
 export const quotesService: QuotesService = {
   async list(filters) {
-    let results = [...mockQuotes];
-    if (filters?.status) results = results.filter((q) => q.status === filters.status);
-    if (filters?.lead_id) results = results.filter((q) => q.lead_id === filters.lead_id);
-    return results;
+    if (!supabase) {
+      let results = [...mockQuotes];
+      if (filters?.status) results = results.filter((quote) => quote.status === filters.status);
+      if (filters?.lead_id) results = results.filter((quote) => quote.lead_id === filters.lead_id);
+      return results;
+    }
+    let query = supabase.from('quotes').select('*').order('created_at', { ascending: false });
+    if (filters?.status) query = query.eq('status', filters.status);
+    if (filters?.lead_id) query = query.eq('lead_id', filters.lead_id);
+    const result = await query;
+    if (result.error) throw new Error(result.error.message);
+    return (result.data ?? []) as Quote[];
   },
 
   async getById(id) {
-    return mockQuotes.find((q) => q.id === id) ?? null;
+    if (!supabase) return mockQuotes.find((quote) => quote.id === id) ?? null;
+    const result = await supabase.from('quotes').select('*').eq('id', id).maybeSingle();
+    if (result.error) throw new Error(result.error.message);
+    return result.data as Quote | null;
   },
 
   async getByToken(token) {
-    return mockQuotes.find((q) => q.token === token) ?? null;
+    if (!supabase) return mockQuotes.find((quote) => quote.token === token) ?? null;
+    const result = await supabase.from('quotes').select('*').eq('token', token).maybeSingle();
+    if (result.error) throw new Error(result.error.message);
+    return result.data as Quote | null;
   },
 
   async create(data) {
-    const quote: Quote = {
-      ...data,
-      id: `qt-${Date.now()}`,
-      token: generateToken(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    mockQuotes.push(quote);
-    return quote;
+    if (!supabase) {
+      const quote: Quote = { ...data, id: `qt-${Date.now()}`, token: generateToken(), created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+      mockQuotes.push(quote);
+      return quote;
+    }
+    const result = await supabase.from('quotes').insert(data).select().single();
+    if (result.error) throw new Error(result.error.message);
+    return result.data as Quote;
   },
 
   async update(id, data) {
-    const idx = mockQuotes.findIndex((q) => q.id === id);
-    if (idx === -1) throw new Error(`Quote ${id} not found`);
-    mockQuotes[idx] = { ...mockQuotes[idx], ...data, updated_at: new Date().toISOString() };
-    return mockQuotes[idx];
+    if (!supabase) {
+      const idx = mockQuotes.findIndex((quote) => quote.id === id);
+      if (idx === -1) throw new Error(`Quote ${id} not found`);
+      mockQuotes[idx] = { ...mockQuotes[idx], ...data, updated_at: new Date().toISOString() };
+      return mockQuotes[idx];
+    }
+    const result = await supabase.from('quotes').update(data).eq('id', id).select().single();
+    if (result.error) throw new Error(result.error.message);
+    return result.data as Quote;
   },
 
   async updateStatus(id, status) {
