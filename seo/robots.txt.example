@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /dashboard/
+Disallow: /q/
+
+Sitemap: https://market.yahala.co/sitemap.xml

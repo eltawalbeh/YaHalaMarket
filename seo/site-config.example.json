@@ -1,0 +1,12 @@
+{
+  "title": "Ya Hala Market | باقات سفر مختارة",
+  "description": "اكتشف باقات السفر والعروض المختارة من ياهلا.",
+  "language": "ar",
+  "robots": { "index": true },
+  "accessibility": { "addBypassLinks": true },
+  "analytics": {
+    "googleAnalyticsId": "",
+    "googleSearchConsoleVerification": ""
+  },
+  "canonicalOrigin": "https://market.yahala.co"
+}
