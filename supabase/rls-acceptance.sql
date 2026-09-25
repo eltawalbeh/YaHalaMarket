@@ -1,0 +1,7 @@
+-- Review against actual table names before applying.
+-- Never expose a service-role key in browser code.
+-- Public users may read only published, non-expired offers.
+-- Leads, quotes, documents, and audit logs must never be public.
+-- Storage policies must separate public offer media from private documents.
+-- Verify role-scoped access for Super Admin, Manager, and Staff.
+-- Verify private quotation links resist enumeration.
