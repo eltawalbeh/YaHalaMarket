@@ -1,0 +1,40 @@
+import type { AuditLogEntry } from '@/types';
+
+export const mockAuditLog: AuditLogEntry[] = [
+  {
+    id: 'al-001',
+    user_id: 'u-001',
+    user_name: 'Ahmed Al-Rashidi',
+    action: 'publish',
+    resource: 'offer',
+    resource_id: 'off-001',
+    resource_label: 'Istanbul Spring Getaway – 5 Nights',
+    diff: { status: { before: 'in_review', after: 'published' } },
+    ip_address: '192.168.1.10',
+    created_at: '2025-01-20T12:00:00Z',
+  },
+  {
+    id: 'al-002',
+    user_id: 'u-002',
+    user_name: 'Sara Al-Otaibi',
+    action: 'create',
+    resource: 'lead',
+    resource_id: 'ld-002',
+    resource_label: 'Faisal Al-Ghamdi',
+    diff: null,
+    ip_address: '192.168.1.12',
+    created_at: '2025-01-25T08:15:00Z',
+  },
+  {
+    id: 'al-003',
+    user_id: 'u-003',
+    user_name: 'Khalid Mansour',
+    action: 'status_change',
+    resource: 'lead',
+    resource_id: 'ld-003',
+    resource_label: 'Mona Al-Shammari',
+    diff: { status: { before: 'follow_up', after: 'sold' } },
+    ip_address: '192.168.1.15',
+    created_at: '2025-01-24T11:00:00Z',
+  },
+];

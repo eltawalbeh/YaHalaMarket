@@ -1,0 +1,49 @@
+/*
+  Ya Hala Market — Design Tokens
+  Swiss-influenced, neutral base with deep teal primary and warm gold accent.
+  RTL-ready. Customise these tokens to evolve the brand; do not hard-code values elsewhere.
+*/
+
+:root {
+  /* Brand */
+  --brand-teal:        #0F7173;
+  --brand-teal-light:  #14908D;
+  --brand-gold:        #C9922B;
+  --brand-gold-light:  #E8A838;
+
+  /* Surfaces */
+  --background:        #FAFAF8;
+  --foreground:        #1A1A18;
+  --card:              #FFFFFF;
+  --card-foreground:   #1A1A18;
+
+  /* Interactive */
+  --primary:           #0F7173;
+  --primary-foreground:#FFFFFF;
+  --secondary:         #F2EEE8;
+  --secondary-foreground: #3A3832;
+
+  /* Utility */
+  --muted:             #EEEBE5;
+  --muted-foreground:  #6B6660;
+  --accent:            #C9922B;
+  --accent-foreground: #FFFFFF;
+  --border:            #D8D3CC;
+  --ring:              #0F7173;
+
+  /* Shape */
+  --radius:            0.375rem;
+
+  /* Typography */
+  --font-sans:         'Inter', 'Noto Sans Arabic', system-ui, sans-serif;
+  --font-arabic:       'Noto Sans Arabic', 'Inter', system-ui, sans-serif;
+  --font-mono:         'JetBrains Mono', ui-monospace, monospace;
+
+  /* Sidebar (dashboard) */
+  --sidebar-bg:        #111312;
+  --sidebar-fg:        #E8E4DC;
+  --sidebar-muted:     #6B6660;
+  --sidebar-active-bg: #0F7173;
+  --sidebar-active-fg: #FFFFFF;
+  --sidebar-width:     15rem;
+}

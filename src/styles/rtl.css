@@ -1,0 +1,31 @@
+/*
+  RTL utilities for Arabic-first layout.
+  These supplement Tailwind's built-in RTL variant (rtl:*) where custom overrides are needed.
+*/
+
+[dir='rtl'] {
+  /* Logical property shims for browsers that don't fully support them */
+  --text-align-start: right;
+  --text-align-end:   left;
+}
+
+[dir='ltr'] {
+  --text-align-start: left;
+  --text-align-end:   right;
+}
+
+/* Arabic numerals in key contexts stay latin for business readability */
+[dir='rtl'] .numerals-latin {
+  font-variant-numeric: normal;
+  unicode-bidi: embed;
+  direction: ltr;
+  display: inline-block;
+}
+
+/* Sidebar scroll in dashboard */
+.sidebar-scroll {
+  scrollbar-width: none;
+}
+.sidebar-scroll::-webkit-scrollbar {
+  display: none;
+}
