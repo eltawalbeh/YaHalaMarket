@@ -9,7 +9,6 @@ const Plan = lazy(() => import("@/pages/public/Plan"))
 const OfferDetail = lazy(() => import("@/pages/public/OfferDetail"))
 const Quote = lazy(() => import("@/pages/public/Quote"))
 const Legal = lazy(() => import("@/pages/public/Legal"))
-
 const Login = lazy(() => import("@/pages/dashboard/Login"))
 const DashboardHome = lazy(() => import("@/pages/dashboard/DashboardHome"))
 const DashboardOffers = lazy(() => import("@/pages/dashboard/Offers"))
@@ -21,15 +20,10 @@ const Reports = lazy(() => import("@/pages/dashboard/Reports"))
 const Team = lazy(() => import("@/pages/dashboard/Team"))
 const AuditLog = lazy(() => import("@/pages/dashboard/AuditLog"))
 const Settings = lazy(() => import("@/pages/dashboard/Settings"))
+const ContentManagement = lazy(() => import("@/pages/dashboard/ContentManagement"))
 
 function LoadingFallback() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
-      <span className="text-sm text-[var(--muted-foreground)]">
-        جارٍ التحميل…
-      </span>
-    </div>
-  )
+  return <div className="min-h-screen flex items-center justify-center bg-[var(--background)]"><span className="text-sm text-[var(--muted-foreground)]">جارٍ التحميل…</span></div>
 }
 
 export function AppRouter() {
@@ -44,13 +38,9 @@ export function AppRouter() {
           <Route path="/plan" element={<Plan />} />
           <Route path="/legal" element={<Legal />} />
           <Route path={DASHBOARD_ROUTES.login} element={<Login />} />
-
           <Route element={<ProtectedRoute />}>
             <Route path={DASHBOARD_ROUTES.home} element={<DashboardHome />} />
-            <Route
-              path={DASHBOARD_ROUTES.offers}
-              element={<DashboardOffers />}
-            />
+            <Route path={DASHBOARD_ROUTES.offers} element={<DashboardOffers />} />
             <Route path={DASHBOARD_ROUTES.offerNew} element={<OfferWizard />} />
             <Route path={DASHBOARD_ROUTES.hotels} element={<Hotels />} />
             <Route path={DASHBOARD_ROUTES.leads} element={<Leads />} />
@@ -59,8 +49,8 @@ export function AppRouter() {
             <Route path={DASHBOARD_ROUTES.team} element={<Team />} />
             <Route path={DASHBOARD_ROUTES.auditLog} element={<AuditLog />} />
             <Route path={DASHBOARD_ROUTES.settings} element={<Settings />} />
+            <Route path={DASHBOARD_ROUTES.content} element={<ContentManagement />} />
           </Route>
-
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

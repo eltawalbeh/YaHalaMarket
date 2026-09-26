@@ -18,6 +18,7 @@ export const DASHBOARD_ROUTES = {
   team: "/dashboard/team",
   auditLog: "/dashboard/audit-log",
   settings: "/dashboard/settings",
+  content: "/dashboard/content",
   login: "/login",
 } as const
 
