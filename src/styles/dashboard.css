@@ -1,0 +1,22 @@
+.dashboard-theme {
+  --background: #f4f8fc;
+  --foreground: #12243f;
+  --card: #ffffff;
+  --card-foreground: #12243f;
+  --primary: #0b8fd0;
+  --primary-foreground: #ffffff;
+  --secondary: #eaf3fa;
+  --secondary-foreground: #214261;
+  --muted: #edf4fa;
+  --muted-foreground: #6f8aa7;
+  --accent: #14b9d9;
+  --accent-foreground: #ffffff;
+  --border: #d7e5f0;
+  --ring: #0b8fd0;
+  --radius: 0.75rem;
+}
+.dashboard-theme input,
+.dashboard-theme textarea,
+.dashboard-theme select {
+  color: var(--foreground);
+}
