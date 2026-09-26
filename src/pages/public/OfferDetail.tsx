@@ -32,6 +32,7 @@ export default function OfferDetail() {
         </p>
       </PublicLayout>
     )
+
   if (!offer)
     return (
       <PublicLayout>
@@ -43,10 +44,9 @@ export default function OfferDetail() {
 
   const title = lang === "ar" ? offer.title_ar : offer.title
   const desc = lang === "ar" ? offer.description_ar : offer.description
-  const city =
-    lang === "ar" ? offer.destination.city_ar : offer.destination.city
-  const country =
-    lang === "ar" ? offer.destination.country_ar : offer.destination.country
+  const city = lang === "ar" ? offer.destination.city_ar : offer.destination.city
+  const country = lang === "ar" ? offer.destination.country_ar : offer.destination.country
+  const planHref = `/plan?offer=${encodeURIComponent(offer.slug)}`
 
   return (
     <PublicLayout>
@@ -62,32 +62,18 @@ export default function OfferDetail() {
           role="img"
           aria-label={title}
         >
-          <span className="text-5xl opacity-20" aria-hidden="true">
-            ✈
-          </span>
+          <span className="text-5xl opacity-20" aria-hidden="true">✈</span>
         </div>
-        <p className="text-sm text-[var(--muted-foreground)] mb-2">
-          {city}, {country}
-        </p>
+        <p className="text-sm text-[var(--muted-foreground)] mb-2">{city}, {country}</p>
         <h1 className="text-3xl font-bold mb-3">{title}</h1>
-        <p className="text-[var(--muted-foreground)] leading-relaxed mb-6">
-          {desc}
-        </p>
+        <p className="text-[var(--muted-foreground)] leading-relaxed mb-6">{desc}</p>
         <div className="flex flex-wrap gap-2 mb-8">
-          {offer.pricing.includes_flights && (
-            <Badge variant="teal">{t("includesFlights", lang)}</Badge>
-          )}
-          {offer.pricing.includes_hotel && (
-            <Badge variant="gray">{t("includesHotel", lang)}</Badge>
-          )}
-          {offer.pricing.includes_transfers && (
-            <Badge variant="blue">{t("includesTransfers", lang)}</Badge>
-          )}
+          {offer.pricing.includes_flights && <Badge variant="teal">{t("includesFlights", lang)}</Badge>}
+          {offer.pricing.includes_hotel && <Badge variant="gray">{t("includesHotel", lang)}</Badge>}
+          {offer.pricing.includes_transfers && <Badge variant="blue">{t("includesTransfers", lang)}</Badge>}
         </div>
         <section className="border border-[var(--border)] rounded-[var(--radius)] p-5 mb-8">
-          <h2 className="font-semibold mb-4">
-            {lang === "ar" ? "تفاصيل السعر" : "Price details"}
-          </h2>
+          <h2 className="font-semibold mb-4">{lang === "ar" ? "تفاصيل السعر" : "Price details"}</h2>
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-2xl font-bold text-[var(--primary)] numerals-latin">
@@ -98,15 +84,15 @@ export default function OfferDetail() {
                 {offer.pricing.per_person ? ` · ${t("perPerson", lang)}` : ""}
               </p>
             </div>
-            <Button size="lg">{t("requestQuote", lang)}</Button>
+            <Link to={planHref}>
+              <Button size="lg">{t("requestQuote", lang)}</Button>
+            </Link>
           </div>
         </section>
         <section className="grid gap-4 sm:grid-cols-2">
           <DetailBlock
             title={lang === "ar" ? "المشمول" : "Included"}
-            value={
-              lang === "ar" ? "حسب تفاصيل العرض" : "As listed in the offer"
-            }
+            value={lang === "ar" ? "حسب تفاصيل العرض" : "As listed in the offer"}
           />
           <DetailBlock
             title={lang === "ar" ? "الفنادق" : "Hotels"}
@@ -122,7 +108,7 @@ export default function OfferDetail() {
   )
 }
 
-function DetailBlock({ title, value }: { title: string value: string }) {
+function DetailBlock({ title, value }: { title: string; value: string }) {
   return (
     <div className="border border-[var(--border)] rounded-[var(--radius)] p-4">
       <h2 className="font-semibold mb-2">{title}</h2>
