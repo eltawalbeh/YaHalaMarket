@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import 'tailwindcss';
 @import './styles/tokens.css';
 @import './styles/rtl.css';
@@ -19,6 +19,7 @@
   --color-border:              var(--border);
   --color-ring:                var(--ring);
   --font-sans:                 var(--font-sans);
+  --font-display:              var(--font-display);
   --font-mono:                 var(--font-mono);
 }
 

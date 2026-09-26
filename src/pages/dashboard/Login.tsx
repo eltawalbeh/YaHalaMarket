@@ -1,32 +1,37 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/app/providers/AuthContext';
-import { Button } from '@/components/ui/Button';
-import { DASHBOARD_ROUTES } from '@/lib/routes';
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { useAuth } from "@/app/providers/AuthContext"
+import { Button } from "@/components/ui/Button"
+import { DASHBOARD_ROUTES } from "@/lib/routes"
 
 export default function Login() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const [email, setEmail] = useState('admin@yahala.co');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const { login } = useAuth()
+  const navigate = useNavigate()
+  const [email, setEmail] = useState("admin@yahala.co")
+  const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    await login(email, password);
-    navigate(DASHBOARD_ROUTES.home);
-  };
+    e.preventDefault()
+    setLoading(true)
+    await login(email, password)
+    navigate(DASHBOARD_ROUTES.home)
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--background)] p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <p className="text-3xl font-bold text-[var(--primary)]">يا هلا</p>
-          <p className="text-sm text-[var(--muted-foreground)] mt-1">Operations Dashboard</p>
+          <p className="text-sm text-[var(--muted-foreground)] mt-1">
+            Operations Dashboard
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-[var(--card)] border border-[var(--border)] rounded-[var(--radius)] p-6 flex flex-col gap-4">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-[var(--card)] border border-[var(--border)] rounded-[var(--radius)] p-6 flex flex-col gap-4"
+        >
           <div>
             <label className="block text-sm font-medium mb-1.5">Email</label>
             <input
@@ -48,7 +53,7 @@ export default function Login() {
             />
           </div>
           <Button type="submit" disabled={loading} className="w-full mt-1">
-            {loading ? 'جارٍ الدخول…' : 'تسجيل الدخول'}
+            {loading ? "جارٍ الدخول…" : "تسجيل الدخول"}
           </Button>
         </form>
 
@@ -57,5 +62,5 @@ export default function Login() {
         </p>
       </div>
     </div>
-  );
+  )
 }

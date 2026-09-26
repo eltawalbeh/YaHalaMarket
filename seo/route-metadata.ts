@@ -1,9 +1,9 @@
 export type RouteMetadata = {
-  title: string;
-  description: string;
-  robots: "index,follow" | "noindex,nofollow";
-  canonicalPath?: string;
-};
+  title: string
+  description: string
+  robots: "index,follow" | "noindex,nofollow"
+  canonicalPath?: string
+}
 
 export const PUBLIC_ROUTE_METADATA: Record<string, RouteMetadata> = {
   home: {
@@ -34,9 +34,9 @@ export const PUBLIC_ROUTE_METADATA: Record<string, RouteMetadata> = {
     description: "صفحة خاصة.",
     robots: "noindex,nofollow",
   },
-};
+}
 
 export function canonicalUrl(path = "/"): string {
-  const base = "https://market.yahala.co";
-  return new URL(path.startsWith("/") ? path : `/${path}`, base).toString();
+  const base = "https://market.yahala.co"
+  return new URL(path.startsWith("/") ? path : `/${path}`, base).toString()
 }

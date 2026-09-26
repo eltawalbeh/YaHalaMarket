@@ -1,2 +1,2 @@
-export { usersService } from '@/services/users';
-export type { User, UserRole } from '@/types/user';
+export { usersService } from "@/services/users"
+export type { User, UserRole } from "@/types/user"

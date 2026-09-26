@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react';
-import { DashboardSidebar } from './DashboardSidebar';
+import type { ReactNode } from "react"
+import { DashboardSidebar } from "./DashboardSidebar"
 
 interface DashboardLayoutProps {
-  children: ReactNode;
+  children: ReactNode
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -11,10 +11,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <DashboardSidebar />
       <div
         className="flex-1 flex flex-col min-w-0"
-        style={{ paddingInlineStart: 'var(--sidebar-width)' }}
+        style={{ paddingInlineStart: "var(--sidebar-width)" }}
       >
         <main className="flex-1 p-6 max-w-screen-xl">{children}</main>
       </div>
     </div>
-  );
+  )
 }

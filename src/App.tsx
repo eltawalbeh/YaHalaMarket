@@ -1,6 +1,6 @@
-import { LangProvider } from '@/app/providers/LangContext';
-import { AuthProvider } from '@/app/providers/AuthContext';
-import { AppRouter } from '@/app/Router';
+import { LangProvider } from "@/app/providers/LangContext"
+import { AuthProvider } from "@/app/providers/AuthContext"
+import { AppRouter } from "@/app/Router"
 
 export default function App() {
   return (
@@ -9,5 +9,5 @@ export default function App() {
         <AppRouter />
       </AuthProvider>
     </LangProvider>
-  );
+  )
 }

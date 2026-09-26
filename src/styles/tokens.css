@@ -37,6 +37,7 @@
   /* Typography */
   --font-sans:         'Inter', 'Noto Sans Arabic', system-ui, sans-serif;
   --font-arabic:       'Noto Sans Arabic', 'Inter', system-ui, sans-serif;
+  --font-display:      'Playfair Display', 'Noto Sans Arabic', serif;
   --font-mono:         'JetBrains Mono', ui-monospace, monospace;
 
   /* Sidebar (dashboard) */

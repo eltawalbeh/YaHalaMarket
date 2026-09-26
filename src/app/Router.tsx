@@ -1,32 +1,34 @@
-import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ROUTE_PATTERNS, DASHBOARD_ROUTES } from '@/lib/routes';
-import { ProtectedRoute } from '@/app/ProtectedRoute';
+import { lazy, Suspense } from "react"
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
+import { ROUTE_PATTERNS, DASHBOARD_ROUTES } from "@/lib/routes"
+import { ProtectedRoute } from "@/app/ProtectedRoute"
 
-const Market = lazy(() => import('@/pages/public/Market'));
-const Offers = lazy(() => import('@/pages/public/Offers'));
-const OfferDetail = lazy(() => import('@/pages/public/OfferDetail'));
-const Quote = lazy(() => import('@/pages/public/Quote'));
-const Legal = lazy(() => import('@/pages/public/Legal'));
+const Market = lazy(() => import("@/pages/public/Market"))
+const Offers = lazy(() => import("@/pages/public/Offers"))
+const OfferDetail = lazy(() => import("@/pages/public/OfferDetail"))
+const Quote = lazy(() => import("@/pages/public/Quote"))
+const Legal = lazy(() => import("@/pages/public/Legal"))
 
-const Login = lazy(() => import('@/pages/dashboard/Login'));
-const DashboardHome = lazy(() => import('@/pages/dashboard/DashboardHome'));
-const DashboardOffers = lazy(() => import('@/pages/dashboard/Offers'));
-const OfferWizard = lazy(() => import('@/pages/dashboard/OfferWizard'));
-const Hotels = lazy(() => import('@/pages/dashboard/Hotels'));
-const Leads = lazy(() => import('@/pages/dashboard/Leads'));
-const Quotes = lazy(() => import('@/pages/dashboard/Quotes'));
-const Reports = lazy(() => import('@/pages/dashboard/Reports'));
-const Team = lazy(() => import('@/pages/dashboard/Team'));
-const AuditLog = lazy(() => import('@/pages/dashboard/AuditLog'));
-const Settings = lazy(() => import('@/pages/dashboard/Settings'));
+const Login = lazy(() => import("@/pages/dashboard/Login"))
+const DashboardHome = lazy(() => import("@/pages/dashboard/DashboardHome"))
+const DashboardOffers = lazy(() => import("@/pages/dashboard/Offers"))
+const OfferWizard = lazy(() => import("@/pages/dashboard/OfferWizard"))
+const Hotels = lazy(() => import("@/pages/dashboard/Hotels"))
+const Leads = lazy(() => import("@/pages/dashboard/Leads"))
+const Quotes = lazy(() => import("@/pages/dashboard/Quotes"))
+const Reports = lazy(() => import("@/pages/dashboard/Reports"))
+const Team = lazy(() => import("@/pages/dashboard/Team"))
+const AuditLog = lazy(() => import("@/pages/dashboard/AuditLog"))
+const Settings = lazy(() => import("@/pages/dashboard/Settings"))
 
 function LoadingFallback() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
-      <span className="text-sm text-[var(--muted-foreground)]">جارٍ التحميل…</span>
+      <span className="text-sm text-[var(--muted-foreground)]">
+        جارٍ التحميل…
+      </span>
     </div>
-  );
+  )
 }
 
 export function AppRouter() {
@@ -43,7 +45,10 @@ export function AppRouter() {
 
           <Route element={<ProtectedRoute />}>
             <Route path={DASHBOARD_ROUTES.home} element={<DashboardHome />} />
-            <Route path={DASHBOARD_ROUTES.offers} element={<DashboardOffers />} />
+            <Route
+              path={DASHBOARD_ROUTES.offers}
+              element={<DashboardOffers />}
+            />
             <Route path={DASHBOARD_ROUTES.offerNew} element={<OfferWizard />} />
             <Route path={DASHBOARD_ROUTES.hotels} element={<Hotels />} />
             <Route path={DASHBOARD_ROUTES.leads} element={<Leads />} />
@@ -58,5 +63,5 @@ export function AppRouter() {
         </Routes>
       </Suspense>
     </BrowserRouter>
-  );
+  )
 }

@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react';
-import { PublicNav } from './PublicNav';
+import type { ReactNode } from "react"
+import { PublicNav } from "./PublicNav"
 
 interface PublicLayoutProps {
-  children: ReactNode;
+  children: ReactNode
 }
 
 export function PublicLayout({ children }: PublicLayoutProps) {
@@ -14,5 +14,5 @@ export function PublicLayout({ children }: PublicLayoutProps) {
         © {new Date().getFullYear()} يا هلا ماركت · market.yahala.co
       </footer>
     </div>
-  );
+  )
 }
