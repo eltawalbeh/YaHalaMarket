@@ -67,13 +67,11 @@ export function PublicNav() {
 
             {/* CTA */}
             <Link
-              to="/login"
+              to="/plan"
               className="hidden sm:inline-flex items-center gap-1.5 bg-[var(--accent)] text-[var(--accent-foreground)] rounded-full px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity shrink-0"
             >
-              {ar ? "لوحة التحكم" : "Dashboard"}
-              <span dir="ltr" className="text-base leading-none">
-                →
-              </span>
+              {ar ? "خطط رحلتك" : "Plan a trip"}
+              <span dir="ltr" className="text-base leading-none">→</span>
             </Link>
           </div>
         </div>

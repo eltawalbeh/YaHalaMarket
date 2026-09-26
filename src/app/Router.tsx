@@ -5,6 +5,7 @@ import { ProtectedRoute } from "@/app/ProtectedRoute"
 
 const Market = lazy(() => import("@/pages/public/Market"))
 const Offers = lazy(() => import("@/pages/public/Offers"))
+const Plan = lazy(() => import("@/pages/public/Plan"))
 const OfferDetail = lazy(() => import("@/pages/public/OfferDetail"))
 const Quote = lazy(() => import("@/pages/public/Quote"))
 const Legal = lazy(() => import("@/pages/public/Legal"))
@@ -40,6 +41,7 @@ export function AppRouter() {
           <Route path="/offers" element={<Offers />} />
           <Route path={ROUTE_PATTERNS.offerDetail} element={<OfferDetail />} />
           <Route path={ROUTE_PATTERNS.quote} element={<Quote />} />
+          <Route path="/plan" element={<Plan />} />
           <Route path="/legal" element={<Legal />} />
           <Route path={DASHBOARD_ROUTES.login} element={<Login />} />
 

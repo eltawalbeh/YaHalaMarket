@@ -47,6 +47,7 @@ export default function Market() {
   const [destination, setDestination] = useState("all")
   const [tripType, setTripType] = useState("all")
 
+
   useEffect(() => {
     offersService.list({ status: "published" }).then((data) => {
       setOffers(data)
@@ -257,6 +258,7 @@ export default function Market() {
           ))}
         </div>
       )}
+
     </PublicLayout>
   )
 }
