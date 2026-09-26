@@ -41,7 +41,11 @@ export const siteContentService = {
   },
   async update(data: Partial<Omit<SiteSettings, "id" | "updated_at">>, userId: string): Promise<SiteSettings> {
     if (!supabase) return { ...fallback, ...data, updated_by: userId, updated_at: new Date().toISOString() }
-    const result = await supabase.from("site_settings").upsert({ id: "default", ...data, updated_by: userId }).select().single()
+    const request = supabase.from("site_settings").upsert({ id: "default", ...data, updated_by: userId }).select().single()
+    const result = await Promise.race([
+      request,
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Site settings request timed out. Apply migration 0006 and check Supabase permissions.")), 10000)),
+    ])
     if (result.error) throw new Error(result.error.message)
     return result.data as SiteSettings
   },
