@@ -1,6 +1,8 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { PublicLayout } from "@/components/public/PublicLayout"
 import { useLang } from "@/app/providers/LangContext"
+import { leadsService } from "@/services"
+import { trackEvent } from "@/lib/analytics"
 
 type Form = {
   name: string
@@ -9,6 +11,8 @@ type Form = {
   when: string
   notes: string
 }
+
+const WHATSAPP_NUMBER = (import.meta.env.VITE_WHATSAPP_NUMBER ?? "").replace(/\D/g, "")
 
 export default function Plan() {
   const { lang } = useLang()
@@ -24,12 +28,49 @@ export default function Plan() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
 
+  useEffect(() => {
+    document.title = ar ? "خطط رحلتك | يا هلا" : "Plan a trip | Ya Hala"
+    trackEvent("plan_view", { language: lang })
+  }, [ar, lang])
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitting(true)
-    await new Promise((r) => setTimeout(r, 900))
-    setSubmitting(false)
-    setSubmitted(true)
+    try {
+      const lead = await leadsService.create({
+        full_name: form.name.trim(),
+        phone: form.whatsapp.trim(),
+        email: null,
+        source: "website",
+        offer_id: null,
+        assigned_to: null,
+        notes: [form.dest, form.when, form.notes].filter(Boolean).join("\n"),
+        pax_count: 1,
+        preferred_dates: form.when ? [form.when] : [],
+        budget_range: null,
+      })
+
+      const reference = lead.reference_id ?? lead.id.slice(0, 8)
+      const message = [
+        ar ? "مرحباً، أرسلت طلب تخطيط رحلة من موقع يا هلا." : "Hello, I submitted a trip planning request from Ya Hala.",
+        ar ? `المرجع: ${reference}` : `Reference: ${reference}`,
+        ar ? `الاسم: ${form.name}` : `Name: ${form.name}`,
+        ar ? `الوجهة: ${form.dest || "غير محددة"}` : `Destination: ${form.dest || "Not specified"}`,
+        ar ? `الموعد/المسافرون: ${form.when || "غير محدد"}` : `Dates/travellers: ${form.when || "Not specified"}`,
+        form.notes ? (ar ? `التفاصيل: ${form.notes}` : `Details: ${form.notes}`) : "",
+      ].filter(Boolean).join("\n")
+
+      setSubmitting(false)
+      setSubmitted(true)
+      trackEvent("plan_submit", { reference, language: lang })
+      if (WHATSAPP_NUMBER) {
+        window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer")
+        trackEvent("whatsapp_click", { reference, language: lang })
+      }
+    } catch {
+      setSubmitting(false)
+      window.alert(ar ? "تعذر إرسال الطلب. حاول مرة أخرى." : "We could not send your request. Please try again.")
+    }
   }
 
   return (
