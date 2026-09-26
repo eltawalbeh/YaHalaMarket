@@ -12,7 +12,7 @@ type Form = {
   notes: string
 }
 
-const WHATSAPP_NUMBER = (import.meta.env.VITE_WHATSAPP_NUMBER ?? "").replace(/\D/g, "")
+const WHATSAPP_NUMBER = (import.meta.env.VITE_WHATSAPP_NUMBER ?? "966559934866").replace(/\D/g, "")
 
 export default function Plan() {
   const { lang } = useLang()
