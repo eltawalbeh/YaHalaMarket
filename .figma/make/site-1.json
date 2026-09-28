@@ -1,0 +1,10 @@
+{
+  "description": "Discover and book travel packages in Arabic and English with a user-friendly marketplace for consumers and a robust dashboard for B2B operations.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
