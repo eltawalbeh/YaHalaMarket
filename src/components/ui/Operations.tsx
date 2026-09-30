@@ -1,6 +1,79 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "./Button";
 import { useLang } from "@/app/providers/LangContext";
+import {
+  ArrowUpRightIcon,
+  BuildingsIcon,
+  BrowserIcon,
+  CalendarCheckIcon,
+  CalendarDotsIcon,
+  ChartLineUpIcon,
+  ChatCenteredTextIcon,
+  CheckCircleIcon,
+  ClockCountdownIcon,
+  ClockIcon,
+  CurrencyCircleDollarIcon,
+  CurrencyDollarIcon,
+  DownloadSimpleIcon,
+  EyeIcon,
+  FileTextIcon,
+  HandshakeIcon,
+  HouseIcon,
+  MagnifyingGlassIcon,
+  MapPinAreaIcon,
+  PaperPlaneTiltIcon,
+  QuestionIcon,
+  SignOutIcon,
+  StarIcon,
+  SuitcaseRollingIcon,
+  TimerIcon,
+  TrendUpIcon,
+  UserGearIcon,
+  UserPlusIcon,
+  UsersIcon,
+  UsersThreeIcon,
+} from "@phosphor-icons/react";
+const iconGlyphs: Record<string, typeof HouseIcon> = {
+  "59933": ArrowUpRightIcon,
+  "61322": HandshakeIcon,
+  "68562": BuildingsIcon,
+  "0154b": SuitcaseRollingIcon,
+  "097fa": TimerIcon,
+  "09a33": CheckCircleIcon,
+  "19ec3": StarIcon,
+  "296b5": ClockIcon,
+  "4346a": TrendUpIcon,
+  "4d609": ArrowUpRightIcon,
+  "4edf7": ClockCountdownIcon,
+  "585f9": DownloadSimpleIcon,
+  "6ba6a": BuildingsIcon,
+  "6cc69": CurrencyDollarIcon,
+  "779e1": FileTextIcon,
+  "7e1a2": ChatCenteredTextIcon,
+  "879c7": MagnifyingGlassIcon,
+  "909e5": CalendarCheckIcon,
+  "9782b": ArrowUpRightIcon,
+  "9d9f7": UserGearIcon,
+  "9f93d": EyeIcon,
+  "a3951": PaperPlaneTiltIcon,
+  "a49e4": MagnifyingGlassIcon,
+  "a8288": CurrencyCircleDollarIcon,
+  "abb6f": EyeIcon,
+  "c4c4f": SuitcaseRollingIcon,
+  "dd900": UserPlusIcon,
+  "e1914": ClockCountdownIcon,
+  "e6954": SignOutIcon,
+  "ea6d9": UsersIcon,
+  "29e28": HouseIcon,
+  "407b7": SuitcaseRollingIcon,
+  "841b7": BuildingsIcon,
+  "f62a4": UsersThreeIcon,
+  "ff452": ChartLineUpIcon,
+  "061e3": BrowserIcon,
+  "d7189": MapPinAreaIcon,
+  "36af2": CalendarDotsIcon,
+  "decad": ChatCenteredTextIcon,
+};
 
 export function Icon({
   file,
@@ -9,11 +82,13 @@ export function Icon({
   file: string;
   className?: string;
 }) {
+  const Glyph = iconGlyphs[file] ?? QuestionIcon;
   return (
-    <img
-      src={"/assets/figma/" + file + ".svg"}
-      alt=""
+    <Glyph
+      aria-hidden="true"
       className={"shrink-0 " + className}
+      size={18}
+      weight="regular"
     />
   );
 }

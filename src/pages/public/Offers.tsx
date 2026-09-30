@@ -7,6 +7,7 @@ import { useResource } from "@/lib/request";
 import { offersService } from "@/services";
 import { Button } from "@/components/ui/Button";
 import { Icon, LoadingState } from "@/components/ui/Operations";
+import { assets } from "@/lib/assets";
 export default function Offers() {
   const { lang } = useLang();
   const ar = lang === "ar";
@@ -181,7 +182,7 @@ export default function Offers() {
           <section className="panel text-center py-8 min-h-[350px]">
             <h2>{ar ? "لا توجد رحلات مطابقة" : "No matching trips"}</h2>
             <img
-              src="/assets/figma/a5489.png"
+              src={assets.offersEmpty}
               alt=""
               className="w-[220px] h-[140px] object-contain mx-auto my-7"
             />

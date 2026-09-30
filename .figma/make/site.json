@@ -1,10 +1,21 @@
 {
-  "description": "Discover and book travel packages in Arabic and English with a user-friendly marketplace for consumers and a robust dashboard for B2B operations.",
-  "robots": {
-    "index": false
+  "title": "Ya Hala Market | Travel Packages & Holiday Deals",
+  "description": "Explore curated travel packages, hotels, tours, and holiday experiences with Ya Hala Market. Compare options and send your request with ease.",
+  "language": "en",
+  "icons": {
+    "icon": "/.figma/make/favicon.png"
+  },
+  "openGraph": {
+    "image": "/.figma/make/social-image.png"
+  },
+  "analytics": {
+    "googleAnalyticsId": "G-WY0G5GWTZ0"
+  },
+  "customScripts": {
+    "headStart": "<!-- Google tag (gtag.js) -->\n<script async src=\"https://www.googletagmanager.com/gtag/js?id=G-WY0G5GWTZ0\"></script>\n<script>\n  window.dataLayer = window.dataLayer || [];\n  function gtag(){dataLayer.push(arguments);}\n  gtag('js', new Date());\n\n  gtag('config', 'G-WY0G5GWTZ0');\n</script>"
   },
   "accessibility": {
     "addBypassLinks": false,
-    "ignoreReducedMotion": false
+    "ignoreReducedMotion": true
   }
 }

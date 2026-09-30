@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/Operations";
 import { Button } from "@/components/ui/Button";
 import { trackEvent } from "@/lib/analytics";
+import { assets } from "@/lib/assets";
 export default function Plan() {
   const { lang } = useLang();
   const ar = lang === "ar";
@@ -315,7 +316,7 @@ export default function Plan() {
             dir={ar ? "rtl" : "ltr"}
           >
             <img
-              src="/assets/figma/0d235.png"
+              src={assets.planCover}
               alt=""
               className="absolute inset-0 w-full h-full object-cover"
             />

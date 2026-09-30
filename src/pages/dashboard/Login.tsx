@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Feedback, Field, Icon } from "@/components/ui/Operations";
 import { db, errorMessage } from "@/lib/request";
 import { LanguageToggle } from "@/components/shared/LanguageToggle";
+import { assets } from "@/lib/assets";
 export default function Login() {
   const { login, authError } = useAuth();
   const { lang } = useLang();
@@ -47,7 +48,7 @@ export default function Login() {
   return (
     <div className="login-screen">
       <section className="login-visual">
-        <img src="/assets/figma/b472b.png" alt="" />
+        <img src={assets.loginCover} alt="" />
         <div className="login-story">
           <div className="w-[72px] h-[3px] bg-[#51c895] mb-5" />
           <h2>
