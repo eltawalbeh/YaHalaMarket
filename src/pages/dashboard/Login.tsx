@@ -7,9 +7,11 @@ import { Feedback, Field, Icon } from "@/components/ui/Operations";
 import { db, errorMessage } from "@/lib/request";
 import { LanguageToggle } from "@/components/shared/LanguageToggle";
 import { assets } from "@/lib/assets";
+import { useSite } from "@/app/providers/SiteContext";
 export default function Login() {
   const { login, authError } = useAuth();
   const { lang } = useLang();
+  const { site } = useSite();
   const ar = lang === "ar";
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -78,16 +80,12 @@ export default function Login() {
       </section>
       <section className="login-form-side" dir={ar ? "rtl" : "ltr"}>
         <div className="flex justify-between items-center">
-          <Link to="/" className="flex items-center gap-3">
-            <div>
-              <strong className="text-xl">يا هلا</strong>
-              <p className="text-[10px] text-[var(--muted-foreground)]">
-                OPERATIONS
-              </p>
-            </div>
-            <span className="brand-mark">
-              <Icon file="4d609" />
-            </span>
+          <Link to="/">
+            <img
+              src="/assets/yahala-logo-light.png"
+              alt={ar ? site.brand_name_ar : site.brand_name}
+              className="h-9 w-auto object-contain"
+            />
           </Link>
           <LanguageToggle />
         </div>

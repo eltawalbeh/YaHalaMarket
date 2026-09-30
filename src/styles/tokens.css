@@ -14,9 +14,9 @@
   --border: #dce8f1;
   --ring: #0d95c7;
   --radius: 12px;
-  --font-sans: "Inter", "Noto Sans Arabic", system-ui, sans-serif;
-  --font-arabic: "Noto Sans Arabic", "Inter", system-ui, sans-serif;
-  --font-display: "Noto Sans Arabic", "Inter", system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-arabic: "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --font-display: "IBM Plex Sans Arabic", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
   --sidebar-width: 228px;
 }

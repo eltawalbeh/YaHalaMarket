@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { useLang } from "@/app/providers/LangContext";
 import { useAuth } from "@/app/providers/AuthContext";
+import { useSite } from "@/app/providers/SiteContext";
 import { canAccessDashboardPath } from "@/lib/permissions";
 import { Icon } from "@/components/ui/Operations";
 const items = [
@@ -18,16 +19,16 @@ const items = [
 export function DashboardSidebar() {
   const { lang } = useLang();
   const { user, logout } = useAuth();
+  const { site } = useSite();
+  const ar = lang === "ar";
   return (
     <aside className="dashboard-sidebar">
       <NavLink to="/" className="flex items-center justify-between gap-3">
-        <div className="sidebar-brand-text">
-          <strong className="text-xl text-white">يا هلا</strong>
-          <p className="text-[10px] mt-1">Market operations</p>
-        </div>
-        <span className="brand-mark">
-          <Icon file="59933" />
-        </span>
+        <img
+          src="/assets/yahala-logo-dark.png"
+          alt={ar ? site.brand_name_ar : site.brand_name}
+          className="h-9 w-auto object-contain"
+        />
       </NavLink>
       <nav className="flex-1">
         <p className="sidebar-label text-[10px] opacity-60 mb-4">
