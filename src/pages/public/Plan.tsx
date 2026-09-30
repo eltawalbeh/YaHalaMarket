@@ -1,218 +1,370 @@
-import { useEffect, useState } from "react"
-import { Link, useSearchParams } from "react-router-dom"
-import { PublicLayout } from "@/components/public/PublicLayout"
-import { useLang } from "@/app/providers/LangContext"
-import { leadsService, offersService } from "@/services"
-import { trackEvent } from "@/lib/analytics"
-import { formatPrice } from "@/lib/utils"
-import { isSupabaseConfigured } from "@/lib/supabase/client"
-import type { Offer } from "@/types"
-
-type Form = {
-  name: string
-  whatsapp: string
-  dest: string
-  when: string
-  notes: string
-}
-
-const WHATSAPP_NUMBER = (import.meta.env.VITE_WHATSAPP_NUMBER ?? "966559934866").replace(/\D/g, "")
-
+import { useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { PublicLayout } from "@/components/public/PublicLayout";
+import { useLang } from "@/app/providers/LangContext";
+import { useSite } from "@/app/providers/SiteContext";
+import { useResource, errorMessage } from "@/lib/request";
+import { offersService, leadsService } from "@/services";
+import { buildWhatsAppUrl } from "@/lib/leadCapture";
+import {
+  Field,
+  Feedback,
+  LoadingState,
+  Icon,
+} from "@/components/ui/Operations";
+import { Button } from "@/components/ui/Button";
+import { trackEvent } from "@/lib/analytics";
 export default function Plan() {
-  const { lang } = useLang()
-  const ar = lang === "ar"
-  const [searchParams] = useSearchParams()
-  const offerSlug = searchParams.get("offer")
-  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null)
-  const [offerLoading, setOfferLoading] = useState(Boolean(offerSlug))
-  const [offerError, setOfferError] = useState(false)
-  const [form, setForm] = useState<Form>({ name: "", whatsapp: "", dest: "", when: "", notes: "" })
-  const [submitting, setSubmitting] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
-
-  useEffect(() => {
-    let active = true
-    if (!offerSlug) {
-      setOfferLoading(false)
-      return
-    }
-    setOfferLoading(true)
-    setOfferError(false)
-    offersService.getBySlug(offerSlug)
-      .then((offer) => {
-        if (!active) return
-        setSelectedOffer(offer)
-        if (offer) {
-          const destination = lang === "ar" ? offer.destination.city_ar : offer.destination.city
-          setForm((current) => ({ ...current, dest: destination }))
-        } else {
-          setOfferError(true)
-        }
-      })
-      .catch(() => {
-        if (active) setOfferError(true)
-      })
-      .finally(() => {
-        if (active) setOfferLoading(false)
-      })
-    return () => { active = false }
-  }, [offerSlug, lang])
-
-  useEffect(() => {
-    document.title = selectedOffer
-      ? (ar ? `طلب عرض: ${selectedOffer.title_ar}` : `Request quote: ${selectedOffer.title}`)
-      : (ar ? "خطط رحلتك | يا هلا" : "Plan a trip | Ya Hala")
-    trackEvent("plan_view", { language: lang, offer: offerSlug ?? undefined })
-  }, [ar, lang, offerSlug, selectedOffer])
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!isSupabaseConfigured) {
-      window.alert(ar ? "قاعدة البيانات غير متصلة حاليًا. يرجى ضبط إعدادات Supabase في بيئة النشر." : "The database is not connected. Configure the Supabase environment variables before submitting.")
-      return
-    }
-    setSubmitting(true)
+  const { lang } = useLang();
+  const ar = lang === "ar";
+  const { site } = useSite();
+  const [params] = useSearchParams();
+  const slug = params.get("offer");
+  const r = useResource(
+    () => (slug ? offersService.getBySelector(slug) : Promise.resolve(null)),
+    [slug],
+  );
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    destination: "",
+    when: "",
+    pax: 1,
+    budget: "",
+    notes: "",
+    website: "",
+  });
+  const key = useRef(crypto.randomUUID());
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState<{
+    reference: string;
+    url: string;
+  } | null>(null);
+  const set = (field: keyof typeof form, value: unknown) =>
+    setForm((f) => ({ ...f, [field]: value }));
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (form.website || busy) return;
+    setBusy(true);
+    setError("");
+    let popup: Window | null = null;
     try {
+      popup = window.open("about:blank", "_blank");
+      if (popup) popup.opener = null;
+      const offer = r.data;
+      const destination = offer
+        ? ar
+          ? offer.destination.city_ar
+          : offer.destination.city
+        : form.destination;
       const lead = await leadsService.create({
         full_name: form.name.trim(),
-        phone: form.whatsapp.trim(),
+        phone: form.phone.trim(),
         email: null,
+        status: "new",
         source: "website",
-        offer_id: selectedOffer?.id ?? null,
+        offer_id: offer?.id || null,
         assigned_to: null,
-        notes: [selectedOffer ? `Package: ${selectedOffer.title}` : "", form.dest, form.when, form.notes].filter(Boolean).join("\n"),
-        pax_count: 1,
+        notes: [offer ? "Package: " + offer.title : "", destination, form.notes]
+          .filter(Boolean)
+          .join("\n"),
+        pax_count: form.pax,
         preferred_dates: form.when ? [form.when] : [],
-        budget_range: null,
-      })
-
-      const reference = lead.reference_id ?? lead.id.slice(0, 8)
+        budget_range: form.budget || null,
+        submission_key: key.current,
+      });
+      const reference = lead.reference_id || lead.id.slice(0, 8);
       const message = [
-        selectedOffer
-          ? (ar ? "مرحباً، أريد الاستفسار عن هذه الباقة من موقع يا هلا." : "Hello, I would like to enquire about this package from Ya Hala.")
-          : (ar ? "مرحباً، أرسلت طلب تخطيط رحلة من موقع يا هلا." : "Hello, I submitted a trip planning request from Ya Hala."),
-        ar ? `الباقة: ${selectedOffer?.title_ar ?? "طلب تخطيط رحلة"}` : `Package: ${selectedOffer?.title ?? "Trip planning request"}`,
-        ar ? `المرجع: ${reference}` : `Reference: ${reference}`,
-        ar ? `الاسم: ${form.name}` : `Name: ${form.name}`,
-        ar ? `الوجهة: ${form.dest || "غير محددة"}` : `Destination: ${form.dest || "Not specified"}`,
-        ar ? `الموعد/المسافرون: ${form.when || "غير محدد"}` : `Dates/travellers: ${form.when || "Not specified"}`,
-        form.notes ? (ar ? `التفاصيل: ${form.notes}` : `Details: ${form.notes}`) : "",
-      ].filter(Boolean).join("\n")
-
-      setSubmitting(false)
-      setSubmitted(true)
-      trackEvent("plan_submit", { reference, language: lang, offer: selectedOffer?.slug ?? undefined })
-      if (WHATSAPP_NUMBER) {
-        window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer")
-        trackEvent("whatsapp_click", { reference, language: lang, offer: selectedOffer?.slug ?? undefined })
-      }
-    } catch {
-      setSubmitting(false)
-      window.alert(ar ? "تعذر إرسال الطلب. حاول مرة أخرى." : "We could not send your request. Please try again.")
+        ar
+          ? "مرحباً، أرسلت طلب رحلة من موقع يا هلا."
+          : "Hello, I submitted a travel request from Ya Hala.",
+        (ar ? "المرجع: " : "Reference: ") + reference,
+        (ar ? "الاسم: " : "Name: ") + form.name,
+        (ar ? "الباقة: " : "Package: ") +
+          (offer
+            ? ar
+              ? offer.title_ar
+              : offer.title
+            : ar
+              ? "رحلة مخصصة"
+              : "Custom trip"),
+        (ar ? "الوجهة: " : "Destination: ") + (destination || "—"),
+        (ar ? "الموعد: " : "Dates: ") + (form.when || "—"),
+        (ar ? "عدد المسافرين: " : "Travellers: ") + form.pax,
+        form.notes,
+      ]
+        .filter(Boolean)
+        .join("\n");
+      const url = buildWhatsAppUrl(
+        site.whatsapp_number || "966559934866",
+        message,
+      );
+      setSuccess({ reference, url });
+      trackEvent("lead_submitted", { reference, offer: offer?.slug });
+      if (popup) popup.location.replace(url);
+    } catch (e) {
+      popup?.close();
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
     }
   }
-
-  const title = selectedOffer ? (ar ? selectedOffer.title_ar : selectedOffer.title) : null
-  const destination = selectedOffer ? (ar ? selectedOffer.destination.city_ar : selectedOffer.destination.city) : null
-
-  if (offerLoading) {
-    return <PublicLayout><p className="py-20 text-center text-[var(--muted-foreground)]">{ar ? "جارٍ تحميل تفاصيل الباقة…" : "Loading package details…"}</p></PublicLayout>
-  }
-
-  if (offerError) {
+  const offer = r.data;
+  if (slug && (r.loading || r.error))
     return (
       <PublicLayout>
-        <div className="py-20 max-w-xl">
-          <h1 className="font-display text-4xl font-medium mb-4">{ar ? "الباقة غير متاحة" : "Package unavailable"}</h1>
-          <p className="text-[var(--muted-foreground)] mb-6">{ar ? "هذه الباقة غير موجودة أو لم تعد منشورة." : "This package does not exist or is no longer published."}</p>
-          <Link to="/offers" className="text-sm underline">{ar ? "العودة إلى الباقات" : "Back to packages"}</Link>
+        <LoadingState {...r} retry={r.reload} />
+      </PublicLayout>
+    );
+  if (slug && !offer)
+    return (
+      <PublicLayout>
+        <div className="empty-state">
+          <h1 className="text-2xl mb-4">
+            {ar ? "الباقة غير متاحة" : "Package unavailable"}
+          </h1>
+          <p>
+            {ar
+              ? "هذه الباقة غير موجودة أو انتهت صلاحيتها."
+              : "This package no longer exists or has expired."}
+          </p>
+          <Link to="/offers" className="text-[var(--primary)] block mt-5">
+            {ar ? "استعرض الباقات" : "Browse packages"}
+          </Link>
         </div>
       </PublicLayout>
-    )
-  }
-
+    );
   return (
     <PublicLayout>
-      <div className="pt-2 pb-20 max-w-5xl">
-        <p className="text-[11px] font-medium tracking-[0.18em] uppercase text-[var(--muted-foreground)] mb-5">
-          {selectedOffer ? (ar ? "طلب عرض سعر" : "Request a quote") : (ar ? "احجز رحلتك" : "Plan a trip")}
-        </p>
-        <h1 className="font-display text-5xl sm:text-6xl lg:text-[4.5rem] font-medium leading-[1.07] tracking-tight max-w-2xl mb-6">
-          {selectedOffer ? (ar ? "ابدأ طلبك لهذه الباقة" : "Start your request for this package") : (ar ? "أخبرنا إلى أين تريد الذهاب" : "Tell us where you want to go")}
-        </h1>
-        <p className="text-base sm:text-lg text-[var(--muted-foreground)] max-w-lg leading-relaxed mb-14">
-          {selectedOffer
-            ? (ar ? "أرسل بياناتك وسيتواصل معك أحد متخصصي الرحلات لتأكيد التفاصيل والسعر النهائي." : "Share your details and a trip specialist will contact you to confirm the details and final price.")
-            : (ar ? "شارك معنا فكرتك، مواعيدك، وميزانيتك — وسيتواصل معك أحد متخصصي الرحلات خلال يوم عمل واحد." : "Share a rough idea, your dates and a budget. A trip specialist will reply within one working day with a first route and a fixed price.")}
-        </p>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
-          <div className="divide-y divide-[var(--border)]">
-            {selectedOffer && (
-              <div className="pb-6 mb-1">
-                <p className="text-[10px] font-medium tracking-widest uppercase text-[var(--muted-foreground)] mb-2">{ar ? "الباقة المحددة" : "Selected package"}</p>
-                <h2 className="text-xl font-semibold mb-2">{title}</h2>
-                <p className="text-sm text-[var(--muted-foreground)]">{destination} · {selectedOffer.duration_nights} {ar ? "ليالٍ" : "nights"}</p>
-                <p className="text-lg font-semibold text-[var(--primary)] numerals-latin mt-3">{formatPrice(selectedOffer.pricing.base_price, selectedOffer.pricing.currency)}</p>
-              </div>
-            )}
-            <div className="pt-5">
-              <p className="text-sm text-[var(--muted-foreground)]">{ar ? "سيتم إرسال طلبك إلى فريق الرحلات ومتابعته عبر واتساب." : "Your request will be sent to our trip team and followed up through WhatsApp."}</p>
-            </div>
-          </div>
-
-          <div className="bg-[var(--card)] rounded-2xl p-7 lg:p-9 shadow-sm">
-            {submitted ? (
-              <div className="py-12 text-center">
-                <div className="w-14 h-14 rounded-full bg-[var(--primary)] flex items-center justify-center mx-auto mb-5"><span className="text-white text-2xl">✓</span></div>
-                <h2 className="font-display text-2xl font-medium mb-3">{ar ? "تم إرسال طلبك!" : "Request sent!"}</h2>
-                <p className="text-[var(--muted-foreground)] text-sm leading-relaxed">{ar ? "سيتواصل معك أحد متخصصي الرحلات خلال يوم عمل واحد." : "A trip specialist will be in touch within one working day."}</p>
+      <div className="max-w-5xl pb-12" style={{ direction: "ltr" }}>
+        <section className="max-w-2xl pt-2 mb-14" dir={ar ? "rtl" : "ltr"}>
+          <p className="text-[11px] text-[var(--primary)] mb-5">
+            {offer
+              ? ar
+                ? "طلب عرض الباقة"
+                : "Package enquiry"
+              : ar
+                ? "احجز رحلتك"
+                : "Plan a trip"}
+          </p>
+          <h1 className="text-4xl sm:text-6xl lg:text-[68px] leading-[1.2] font-medium mb-6">
+            {offer
+              ? ar
+                ? offer.title_ar
+                : offer.title
+              : site.content[ar ? "plan_title_ar" : "plan_title"]}
+          </h1>
+          <p className="max-w-lg text-[var(--muted-foreground)] leading-8">
+            {offer
+              ? ar
+                ? "أرسل بياناتك ليؤكد فريق الرحلات تفاصيل هذه الباقة والسعر النهائي."
+                : "Share your details to confirm this package and its final price."
+              : site.content[ar ? "plan_text_ar" : "plan_text"]}
+          </p>
+        </section>
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-10 lg:gap-20 items-start">
+          <section className="panel !p-7 lg:!p-9" dir={ar ? "rtl" : "ltr"}>
+            {success ? (
+              <div className="text-center py-14">
+                <h2>
+                  {ar ? "تم تسجيل طلبك بنجاح" : "Your request has been saved"}
+                </h2>
+                <p className="text-sm my-5">
+                  {ar ? "رقم المرجع: " : "Reference: "}
+                  <strong dir="ltr">{success.reference}</strong>
+                </p>
+                <p className="text-sm text-[var(--muted-foreground)] mb-6">
+                  {ar
+                    ? "أكمل إرسال الرسالة في واتساب، أو افتحه من الزر أدناه."
+                    : "Send the prefilled message in WhatsApp, or open it using the button below."}
+                </p>
+                <a
+                  href={success.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block rounded-xl bg-[var(--primary)] text-white px-5 py-3"
+                >
+                  {ar ? "فتح واتساب" : "Open WhatsApp"}
+                </a>
               </div>
             ) : (
-              <>
-                <h2 className="text-lg font-semibold mb-6">{selectedOffer ? (ar ? "بياناتك" : "Your details") : (ar ? "ابدأ استفسارك" : "Start your enquiry")}</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">{ar ? "الاسم الكامل" : "Your name"}</label>
-                    <input required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder={ar ? "محمد العمري" : "Jane Smith"} className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm outline-none focus:border-[var(--primary)] transition-colors placeholder:text-[var(--muted-foreground)]" />
+              <form onSubmit={submit} className="grid gap-5">
+                <h2>{ar ? "ابدأ استفسارك" : "Start your enquiry"}</h2>
+                {offer && (
+                  <div className="bg-[var(--secondary)] rounded-xl p-4 text-sm">
+                    <strong>{ar ? offer.title_ar : offer.title}</strong>
+                    <p className="mt-2">
+                      {ar ? offer.destination.city_ar : offer.destination.city}{" "}
+                      · {offer.duration_nights} {ar ? "ليالٍ" : "nights"}
+                    </p>
+                    <p className="mt-2 text-[var(--primary)]">
+                      {offer.pricing.base_price.toLocaleString("en-US")}{" "}
+                      {offer.pricing.currency}
+                    </p>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">{ar ? "رقم الواتساب" : "WhatsApp number"}</label>
-                    <input required type="tel" value={form.whatsapp} onChange={(e) => setForm((f) => ({ ...f, whatsapp: e.target.value }))} placeholder="+966 5X XXX XXXX" dir="ltr" className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm outline-none focus:border-[var(--primary)] transition-colors placeholder:text-[var(--muted-foreground)]" />
-                  </div>
-                  {!selectedOffer && (
-                    <div>
-                      <label className="block text-sm font-medium mb-1.5">{ar ? "الوجهة المفضلة" : "Where to?"}</label>
-                      <select value={form.dest} onChange={(e) => setForm((f) => ({ ...f, dest: e.target.value }))} className="w-full appearance-none rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm outline-none focus:border-[var(--primary)] transition-colors cursor-pointer">
-                        <option value="">{ar ? "لست متأكداً بعد" : "Not sure yet"}</option>
-                        <option value="TR">{ar ? "إسطنبول، تركيا" : "Istanbul, Turkey"}</option>
-                        <option value="MV">{ar ? "المالديف" : "Maldives"}</option>
-                        <option value="GE">{ar ? "جورجيا" : "Georgia"}</option>
-                        <option value="JP">{ar ? "اليابان" : "Japan"}</option>
-                        <option value="IT">{ar ? "إيطاليا" : "Italy"}</option>
-                        <option value="GR">{ar ? "اليونان" : "Greece"}</option>
-                        <option value="other">{ar ? "وجهة أخرى" : "Other destination"}</option>
-                      </select>
-                    </div>
-                  )}
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">{ar ? "موعد السفر وعدد المسافرين" : "When, and how many?"}</label>
-                    <input value={form.when} onChange={(e) => setForm((f) => ({ ...f, when: e.target.value }))} placeholder={ar ? "شخصان، أواخر أكتوبر" : "Two of us, late October"} className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm outline-none focus:border-[var(--primary)] transition-colors placeholder:text-[var(--muted-foreground)]" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">{ar ? "أخبرنا عن رحلتك" : "Tell us about the trip"}</label>
-                    <textarea rows={4} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} placeholder={ar ? "ما تحب وما تفضل تجنبه، الميزانية التقريبية للشخص…" : "What you love, what you'd skip, a rough budget per person."} className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-4 py-3 text-sm outline-none focus:border-[var(--primary)] transition-colors resize-none placeholder:text-[var(--muted-foreground)]" />
-                  </div>
-                  <button type="submit" disabled={submitting} className="w-full flex items-center justify-center gap-2 bg-[var(--accent)] text-[var(--accent-foreground)] rounded-full py-4 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60">
-                    {submitting ? (ar ? "جارٍ الإرسال…" : "Sending…") : (ar ? "أرسل طلبك" : "Send enquiry")} {!submitting && <span dir="ltr">→</span>}
-                  </button>
-                  <p className="text-center text-[11px] text-[var(--muted-foreground)] leading-relaxed">{ar ? "لا يوجد أي التزام مالي. بياناتك محمية تماماً." : "No payment and no obligation. We never share your details."}</p>
-                </form>
-              </>
+                )}
+                <Field label={ar ? "الاسم الكامل" : "Full name"}>
+                  <input
+                    autoComplete="name"
+                    required
+                    minLength={2}
+                    maxLength={160}
+                    value={form.name}
+                    onChange={(e) => set("name", e.target.value)}
+                  />
+                </Field>
+                <Field label={ar ? "رقم الواتساب" : "WhatsApp number"}>
+                  <input
+                    autoComplete="tel"
+                    required
+                    type="tel"
+                    pattern="[+0-9 ()-]{7,25}"
+                    dir="ltr"
+                    placeholder="+966 5X XXX XXXX"
+                    value={form.phone}
+                    onChange={(e) => set("phone", e.target.value)}
+                  />
+                </Field>
+                {!offer && (
+                  <Field
+                    label={ar ? "الوجهة المفضلة" : "Preferred destination"}
+                  >
+                    <input
+                      placeholder={
+                        ar
+                          ? "الوجهة أو لست متأكداً بعد"
+                          : "Destination, or not sure yet"
+                      }
+                      value={form.destination}
+                      maxLength={160}
+                      onChange={(e) => set("destination", e.target.value)}
+                    />
+                  </Field>
+                )}
+                <div className="form-grid">
+                  <Field label={ar ? "موعد السفر" : "Travel dates"}>
+                    <input
+                      value={form.when}
+                      maxLength={160}
+                      placeholder={ar ? "أواخر أكتوبر" : "Late October"}
+                      onChange={(e) => set("when", e.target.value)}
+                    />
+                  </Field>
+                  <Field label={ar ? "عدد المسافرين" : "Travellers"}>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      max={100}
+                      value={form.pax}
+                      onChange={(e) => set("pax", Number(e.target.value))}
+                    />
+                  </Field>
+                </div>
+                <Field
+                  label={ar ? "الميزانية التقريبية" : "Approximate budget"}
+                >
+                  <input
+                    value={form.budget}
+                    maxLength={100}
+                    placeholder={ar ? "المبلغ والعملة" : "Amount and currency"}
+                    onChange={(e) => set("budget", e.target.value)}
+                  />
+                </Field>
+                <Field
+                  label={ar ? "أخبرنا عن رحلتك" : "Tell us about your trip"}
+                >
+                  <textarea
+                    rows={4}
+                    maxLength={4000}
+                    value={form.notes}
+                    onChange={(e) => set("notes", e.target.value)}
+                  />
+                </Field>
+                <label className="hidden" aria-hidden="true">
+                  Website
+                  <input
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={form.website}
+                    onChange={(e) => set("website", e.target.value)}
+                  />
+                </label>
+                <Feedback error={error} />
+                <Button type="submit" disabled={busy}>
+                  {busy
+                    ? ar
+                      ? "جارٍ الإرسال…"
+                      : "Sending…"
+                    : ar
+                      ? "أرسل طلبك ←"
+                      : "Send enquiry →"}
+                </Button>
+                <p className="text-center text-[10px] text-[var(--muted-foreground)]">
+                  {ar ? "لا يوجد التزام مالي. " : "No payment is collected. "}
+                  <Link to="/legal" className="underline">
+                    {ar ? "الخصوصية والشروط" : "Privacy & terms"}
+                  </Link>
+                </p>
+              </form>
             )}
-          </div>
+          </section>
+          <aside
+            className="relative rounded-2xl overflow-hidden min-h-[630px] mt-5"
+            dir={ar ? "rtl" : "ltr"}
+          >
+            <img
+              src="/assets/figma/0d235.png"
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-[#102b4d88] to-[#102b4d22]" />
+            <div className="relative text-white p-8">
+              <span className="text-xs px-3 py-1 rounded-full bg-white/20">
+                {ar ? "استفسار رحلة" : "Trip enquiry"}
+              </span>
+              <h2 className="text-3xl font-bold mt-8 mb-4">
+                {ar
+                  ? "تخطيط رحلات مخصصة مع فريق يا هلا"
+                  : "Personalised travel planning with Ya Hala"}
+              </h2>
+              <p className="text-sm leading-7 text-white/90">
+                {ar
+                  ? "شارك تفاصيل رحلتك، وسنقوم بربطها بتصميم برنامج متكامل يناسب عدد المسافرين وميزانيتك."
+                  : "Share your trip details and we will plan an itinerary around your group and budget."}
+              </p>
+              <div className="bg-[#102b4d88] rounded-xl p-5 mt-6 grid gap-5">
+                {[
+                  [
+                    "d7189",
+                    ar
+                      ? "وجهات متعددة وخيارات مرنة"
+                      : "Destinations and flexible options",
+                  ],
+                  [
+                    "36af2",
+                    ar
+                      ? "مواعيد مرنة ومتابعة فورية"
+                      : "Flexible dates and follow-up",
+                  ],
+                  [
+                    "decad",
+                    ar
+                      ? "متابعة واضحة عبر واتساب"
+                      : "Clear follow-up via WhatsApp",
+                  ],
+                ].map(([file, label]) => (
+                  <p className="flex items-center gap-3 text-xs" key={file}>
+                    <Icon file={file} />
+                    {label}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </aside>
         </div>
       </div>
     </PublicLayout>
-  )
+  );
 }

@@ -1,9 +1,13 @@
-import { createClient } from "@supabase/supabase-js"
+import { createClient } from "@supabase/supabase-js";
 
-const url = import.meta.env.VITE_SUPABASE_URL ?? "https://gmatzlnzgbbnsrtnbnag.supabase.co"
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? "sb_publishable_3OE2-QYyHJVjS5ewt9wUKw_pyYOa9i4"
+const url =
+  import.meta.env.VITE_SUPABASE_URL ??
+  "https://gmatzlnzgbbnsrtnbnag.supabase.co";
+const anonKey =
+  import.meta.env.VITE_SUPABASE_ANON_KEY ??
+  "sb_publishable_3OE2-QYyHJVjS5ewt9wUKw_pyYOa9i4";
 
-export const isSupabaseConfigured = Boolean(url && anonKey)
+export const isSupabaseConfigured = Boolean(url && anonKey);
 
 export const supabase = isSupabaseConfigured
   ? createClient(url, anonKey, {
@@ -12,5 +16,16 @@ export const supabase = isSupabaseConfigured
         autoRefreshToken: true,
         detectSessionInUrl: true,
       },
+      global: {
+        fetch: (input, init = {}) => {
+          const timeout = AbortSignal.timeout(15000);
+          return fetch(input, {
+            ...init,
+            signal: init.signal
+              ? AbortSignal.any([init.signal, timeout])
+              : timeout,
+          });
+        },
+      },
     })
-  : null
+  : null;

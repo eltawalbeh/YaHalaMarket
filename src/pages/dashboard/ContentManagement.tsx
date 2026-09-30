@@ -1,74 +1,287 @@
-import { useEffect, useState } from "react"
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout"
-import { Card, CardHeader } from "@/components/ui/Card"
-import { Button } from "@/components/ui/Button"
-import { useLang } from "@/app/providers/LangContext"
-import { useAuth } from "@/app/providers/AuthContext"
-import { siteContentService, type SiteSettings } from "@/services/siteContent"
-
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import {
+  PageTitle,
+  LoadingState,
+  Field,
+  Feedback,
+} from "@/components/ui/Operations";
+import { Button } from "@/components/ui/Button";
+import { useLang } from "@/app/providers/LangContext";
+import { useAuth } from "@/app/providers/AuthContext";
+import { useSite } from "@/app/providers/SiteContext";
+import { siteContentService, type SiteSettings } from "@/services/siteContent";
+import { uploadImage } from "@/services/media";
+import { useResource, errorMessage } from "@/lib/request";
 export default function ContentManagement() {
-  const { lang } = useLang()
-  const { user } = useAuth()
-  const ar = lang === "ar"
-  const [form, setForm] = useState<SiteSettings | null>(null)
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState("")
-
+  const { lang } = useLang();
+  const ar = lang === "ar";
+  const { user } = useAuth();
+  const site = useSite();
+  const r = useResource(() => siteContentService.get());
+  const [form, setForm] = useState<SiteSettings | null>(null);
+  const [tab, setTab] = useState("brand");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   useEffect(() => {
-    siteContentService.get().then(setForm).catch((error) => setMessage(error.message))
-  }, [])
-
-  const set = (key: keyof SiteSettings, value: string) => {
-    setForm((current) => current ? { ...current, [key]: value } : current)
-  }
-
+    if (r.data) setForm(r.data);
+  }, [r.data]);
+  const set = (key: keyof SiteSettings, value: string) =>
+    setForm((f) => (f ? { ...f, [key]: value } : f));
+  const content = (key: string, value: string) =>
+    setForm((f) => (f ? { ...f, content: { ...f.content, [key]: value } } : f));
+  const field = (key: keyof SiteSettings, label: string, type = "text") => (
+    <Field label={label}>
+      <input
+        type={type}
+        value={String(form?.[key] || "")}
+        onChange={(e) => set(key, e.target.value)}
+      />
+    </Field>
+  );
+  const text = (key: string, label: string, large = false) => (
+    <Field label={label}>
+      {large ? (
+        <textarea
+          rows={6}
+          value={form?.content[key] || ""}
+          onChange={(e) => content(key, e.target.value)}
+        />
+      ) : (
+        <input
+          value={form?.content[key] || ""}
+          onChange={(e) => content(key, e.target.value)}
+        />
+      )}
+    </Field>
+  );
   async function save(e: React.FormEvent) {
-    e.preventDefault()
-    if (!form || !user) return
-    setSaving(true)
-    setMessage("")
+    e.preventDefault();
+    if (!form || !user) return;
+    setBusy(true);
+    setError("");
+    setMessage("");
     try {
-      const saved = await siteContentService.update({
-        brand_name: form.brand_name,
-        brand_name_ar: form.brand_name_ar,
-        logo_url: form.logo_url,
-        logo_mobile_url: form.logo_mobile_url,
-        footer_text: form.footer_text,
-        footer_text_ar: form.footer_text_ar,
-        contact_email: form.contact_email,
-        whatsapp_number: form.whatsapp_number,
-        office_address: form.office_address,
-        office_address_ar: form.office_address_ar,
-      }, user.id)
-      setForm(saved)
-      setMessage(ar ? "تم حفظ التغييرات." : "Changes saved.")
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : (ar ? "تعذر الحفظ." : "Could not save changes."))
+      const { id, updated_at, updated_by, ...payload } = form;
+      const saved = await siteContentService.update(payload, user.id);
+      setForm(saved);
+      await site.reload();
+      setMessage(
+        ar
+          ? "تم حفظ ونشر التغييرات على الموقع."
+          : "Changes saved and published to the website.",
+      );
+    } catch (e) {
+      setError(errorMessage(e));
     } finally {
-      setSaving(false)
+      setBusy(false);
     }
   }
-
-  if (!form) return <DashboardLayout><p className="text-sm text-[var(--muted-foreground)]">{ar ? "جارٍ تحميل إعدادات الموقع…" : "Loading site settings…"}</p></DashboardLayout>
-
-  const field = (key: keyof SiteSettings, label: string, type = "text") => (
-    <label className="block">
-      <span className="block text-sm font-medium mb-1.5">{label}</span>
-      <input type={type} value={String(form[key] ?? "")} onChange={(e) => set(key, e.target.value)} className="w-full px-3 py-2 text-sm border border-[var(--border)] rounded-[var(--radius)] bg-[var(--background)]" />
-    </label>
-  )
-
+  async function image(file?: File) {
+    if (!file || !user) return;
+    setBusy(true);
+    setError("");
+    try {
+      set("logo_url", await uploadImage(file, user.id));
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  const tabs = [
+    ["brand", "الهوية", "Brand"],
+    ["home", "الصفحة الرئيسية", "Homepage"],
+    ["plan", "خطط رحلتك", "Plan a trip"],
+    ["footer", "الفوتر والتواصل", "Footer & contact"],
+    ["seo", "إعدادات البحث", "SEO"],
+    ["legal", "الخصوصية والشروط", "Privacy & terms"],
+  ];
   return (
     <DashboardLayout>
-      <div className="max-w-3xl">
-        <h1 className="text-xl font-bold mb-2">{ar ? "إدارة محتوى الموقع" : "Site Content Management"}</h1>
-        <p className="text-sm text-[var(--muted-foreground)] mb-6">{ar ? "غيّر المعلومات العامة التي تظهر في الموقع من هنا." : "Manage the public site information from one place."}</p>
-        <form onSubmit={save} className="space-y-4">
-          <Card><CardHeader><h2 className="font-semibold text-sm">{ar ? "الهوية" : "Brand"}</h2></CardHeader><div className="grid sm:grid-cols-2 gap-4">{field("brand_name", ar ? "اسم العلامة بالإنجليزية" : "Brand name")}{field("brand_name_ar", ar ? "اسم العلامة بالعربية" : "Arabic brand name")}{field("logo_url", ar ? "رابط اللوجو الرئيسي" : "Main logo URL", "url")}{field("logo_mobile_url", ar ? "رابط لوجو الموبايل" : "Mobile logo URL", "url")}</div></Card>
-          <Card><CardHeader><h2 className="font-semibold text-sm">{ar ? "الفوتر والتواصل" : "Footer & Contact"}</h2></CardHeader><div className="space-y-4">{field("footer_text", ar ? "نص الفوتر بالإنجليزية" : "Footer text")}{field("footer_text_ar", ar ? "نص الفوتر بالعربية" : "Arabic footer text")}{field("contact_email", ar ? "البريد الإلكتروني" : "Contact email", "email")}{field("whatsapp_number", ar ? "رقم الواتساب" : "WhatsApp number", "tel")}{field("office_address", ar ? "العنوان بالإنجليزية" : "Office address")}{field("office_address_ar", ar ? "العنوان بالعربية" : "Arabic office address")}</div></Card>
-          <div className="flex items-center gap-3"><Button type="submit" disabled={saving}>{saving ? (ar ? "جارٍ الحفظ…" : "Saving…") : (ar ? "حفظ التغييرات" : "Save changes")}</Button>{message && <span className="text-sm text-[var(--muted-foreground)]">{message}</span>}</div>
+      <PageTitle
+        title={ar ? "محتوى الموقع" : "Website content"}
+        subtitle={
+          ar
+            ? "عدّل الهوية والنصوص والتواصل، ثم انشر التغييرات على الموقع."
+            : "Edit branding, copy and contact details, then publish your changes."
+        }
+      >
+        <Link
+          className="rounded-xl bg-white border border-[var(--border)] px-4 py-2"
+          to="/"
+          target="_blank"
+        >
+          {ar ? "معاينة الموقع" : "Preview website"}
+        </Link>
+      </PageTitle>
+      <LoadingState {...r} retry={r.reload} />
+      {form && (
+        <form onSubmit={save}>
+          <div className="panel flex items-center justify-between gap-4 mb-5">
+            <span className="text-xs text-[var(--muted-foreground)]">
+              {form.updated_at
+                ? new Date(form.updated_at).toLocaleString("en-GB")
+                : ""}
+            </span>
+            <Button type="submit" disabled={busy}>
+              {busy
+                ? ar
+                  ? "جارٍ الحفظ…"
+                  : "Saving…"
+                : ar
+                  ? "حفظ ونشر التغييرات"
+                  : "Save & publish"}
+            </Button>
+          </div>
+          <Feedback error={error} message={message} />
+          <div className="grid lg:grid-cols-[220px_minmax(0,1fr)] gap-5">
+            <aside className="panel">
+              <h2>{ar ? "هيكل الموقع" : "Site sections"}</h2>
+              <div className="grid gap-2">
+                {tabs.map(([key, arabic, en]) => (
+                  <button
+                    type="button"
+                    key={key}
+                    className={
+                      "text-start p-3 rounded-xl " +
+                      (tab === key
+                        ? "bg-[var(--secondary)] text-[var(--primary)]"
+                        : "hover:bg-[var(--muted)]")
+                    }
+                    onClick={() => setTab(key)}
+                  >
+                    {ar ? arabic : en}
+                  </button>
+                ))}
+              </div>
+            </aside>
+            <section className="panel">
+              <h2>{tabs.find((t) => t[0] === tab)?.[ar ? 1 : 2]}</h2>
+              <div className="form-grid">
+                {tab === "brand" && (
+                  <>
+                    {field("brand_name", "Brand name")}
+                    {field("brand_name_ar", "اسم العلامة بالعربية")}
+                    {field(
+                      "logo_url",
+                      ar ? "رابط اللوجو الرئيسي" : "Main logo URL",
+                      "url",
+                    )}
+                    {field(
+                      "logo_mobile_url",
+                      ar ? "رابط لوجو الهاتف" : "Mobile logo URL",
+                      "url",
+                    )}
+                    <Field label={ar ? "رفع اللوجو" : "Upload logo"}>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/avif"
+                        disabled={busy}
+                        onChange={(e) => image(e.target.files?.[0])}
+                      />
+                    </Field>
+                    {form.logo_url && (
+                      <img
+                        src={form.logo_url}
+                        alt="Brand preview"
+                        className="max-h-24 max-w-full object-contain"
+                      />
+                    )}
+                  </>
+                )}
+                {tab === "home" && (
+                  <>
+                    {text("hero_title", "Main heading")}
+                    {text("hero_title_ar", "العنوان الرئيسي")}
+                    {text("hero_text", "Supporting copy", true)}
+                    {text("hero_text_ar", "النص الداعم", true)}
+                  </>
+                )}
+                {tab === "plan" && (
+                  <>
+                    {text("plan_title", "Plan page heading")}
+                    {text("plan_title_ar", "عنوان خطط رحلتك")}
+                    {text("plan_text", "Supporting copy", true)}
+                    {text("plan_text_ar", "النص الداعم", true)}
+                  </>
+                )}
+                {tab === "footer" && (
+                  <>
+                    {field("footer_text", "Footer text")}
+                    {field("footer_text_ar", "نص الفوتر بالعربية")}
+                    {field(
+                      "contact_email",
+                      ar ? "البريد الإلكتروني" : "Email",
+                      "email",
+                    )}
+                    {field(
+                      "whatsapp_number",
+                      ar
+                        ? "رقم الواتساب مع مفتاح الدولة"
+                        : "WhatsApp with country code",
+                      "tel",
+                    )}
+                    {field("office_address", "Office address")}
+                    {field("office_address_ar", "عنوان المكتب بالعربية")}
+                  </>
+                )}
+                {tab === "seo" && (
+                  <>
+                    {text("seo_title", "Page title")}
+                    {text("seo_title_ar", "عنوان الصفحة بالعربية")}
+                    {text("seo_description", "Meta description", true)}
+                    {text("seo_description_ar", "وصف البحث بالعربية", true)}
+                  </>
+                )}
+                {tab === "legal" && (
+                  <>
+                    {text("privacy", "Privacy information", true)}
+                    {text("privacy_ar", "معلومات الخصوصية", true)}
+                    {text("terms", "Service terms", true)}
+                    {text("terms_ar", "شروط الخدمة", true)}
+                  </>
+                )}
+              </div>
+              {["home", "plan"].includes(tab) && (
+                <div className="rounded-2xl bg-[var(--muted)] border border-[var(--border)] p-8 mt-6">
+                  <p className="text-xs text-[var(--muted-foreground)] mb-4">
+                    {ar ? "معاينة النص" : "Copy preview"}
+                  </p>
+                  <h3 className="text-3xl font-bold mb-3">
+                    {
+                      form.content[
+                        tab === "home"
+                          ? ar
+                            ? "hero_title_ar"
+                            : "hero_title"
+                          : ar
+                            ? "plan_title_ar"
+                            : "plan_title"
+                      ]
+                    }
+                  </h3>
+                  <p className="text-[var(--muted-foreground)]">
+                    {
+                      form.content[
+                        tab === "home"
+                          ? ar
+                            ? "hero_text_ar"
+                            : "hero_text"
+                          : ar
+                            ? "plan_text_ar"
+                            : "plan_text"
+                      ]
+                    }
+                  </p>
+                </div>
+              )}
+            </section>
+          </div>
         </form>
-      </div>
+      )}
     </DashboardLayout>
-  )
+  );
 }

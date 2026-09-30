@@ -1,0 +1,22 @@
+export function exportCSV(filename: string, rows: Record<string, unknown>[]) {
+  if (!rows.length) return;
+  const columns = Object.keys(rows[0]);
+  const escape = (value: unknown) => {
+    let text = value == null ? "" : String(value);
+    if (/^[=+\-@\t\r]/.test(text)) text = "'" + text;
+    return '"' + text.split('"').join('""') + '"';
+  };
+  const csv =
+    "\uFEFF" +
+    [columns, ...rows.map((row) => columns.map((key) => row[key]))]
+      .map((row) => row.map(escape).join(","))
+      .join("\r\n");
+  const url = URL.createObjectURL(
+    new Blob([csv], { type: "text/csv;charset=utf-8;" }),
+  );
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

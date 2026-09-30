@@ -1,51 +1,61 @@
-import { useEffect, useState } from "react"
-import { DashboardLayout } from "@/components/dashboard/DashboardLayout"
-import { Card } from "@/components/ui/Card"
-import { Badge } from "@/components/ui/Badge"
-import { useLang } from "@/app/providers/LangContext"
-import { t } from "@/lib/i18n"
-import { mockAuditLog } from "@/data"
-import { formatDate } from "@/lib/utils"
-import type { AuditLogEntry } from "@/types"
-
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { PageTitle, LoadingState, DataTable } from "@/components/ui/Operations";
+import { useLang } from "@/app/providers/LangContext";
+import { db, request, useResource } from "@/lib/request";
 export default function AuditLog() {
-  const { lang } = useLang()
-  const [entries, setEntries] = useState<AuditLogEntry[]>([])
-
-  useEffect(() => {
-    setEntries(mockAuditLog)
-  }, [])
-
+  const { lang } = useLang();
+  const ar = lang === "ar";
+  const r = useResource(
+    async () =>
+      (await request(
+        db()
+          .from("audit_log")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(500),
+      )) as {
+        id: string;
+        user_id: string;
+        action: string;
+        resource: string;
+        resource_id: string;
+        created_at: string;
+        diff: { fields?: string[] };
+      }[],
+  );
   return (
     <DashboardLayout>
-      <h1 className="text-xl font-bold mb-6">{t("dashboardAuditLog", lang)}</h1>
-
-      <Card padding={false}>
-        <div className="divide-y divide-[var(--border)]">
-          {entries.map((entry) => (
-            <div key={entry.id} className="px-4 py-3 flex items-start gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm">
-                  <span className="font-medium">{entry.user_name}</span>{" "}
-                  <Badge variant="gray">{entry.action}</Badge>{" "}
-                  <span className="text-[var(--muted-foreground)]">
-                    {entry.resource_label}
-                  </span>
-                </p>
-                <p className="text-xs text-[var(--muted-foreground)] mt-0.5 numerals-latin">
-                  {formatDate(entry.created_at, lang)}
-                  {entry.ip_address && ` · ${entry.ip_address}`}
-                </p>
-              </div>
-            </div>
-          ))}
-          {entries.length === 0 && (
-            <p className="px-4 py-8 text-center text-sm text-[var(--muted-foreground)]">
-              {t("noResults", lang)}
-            </p>
-          )}
-        </div>
-      </Card>
+      <PageTitle
+        title={ar ? "سجل النشاطات" : "Audit log"}
+        subtitle={
+          ar
+            ? "آخر 500 عملية مسجلة من قاعدة البيانات."
+            : "Latest 500 operations recorded by the database."
+        }
+      />
+      <LoadingState {...r} retry={r.reload} empty={!r.data?.length} />
+      {r.data && (
+        <DataTable
+          rows={r.data}
+          rowKey={(x) => x.id}
+          columns={[
+            {
+              label: ar ? "الوقت" : "Time",
+              render: (x) => new Date(x.created_at).toLocaleString("en-GB"),
+            },
+            { label: ar ? "العملية" : "Action", render: (x) => x.action },
+            { label: ar ? "القسم" : "Resource", render: (x) => x.resource },
+            {
+              label: ar ? "المرجع" : "Reference",
+              render: (x) => x.resource_id.slice(0, 8),
+            },
+            {
+              label: ar ? "الحقول المعدلة" : "Changed fields",
+              render: (x) => x.diff?.fields?.join(", ") || "—",
+            },
+          ]}
+        />
+      )}
     </DashboardLayout>
-  )
+  );
 }

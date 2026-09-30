@@ -1,19 +1,27 @@
-import { PublicLayout } from "@/components/public/PublicLayout"
-import { useLang } from "@/app/providers/LangContext"
-
+import { PublicLayout } from "@/components/public/PublicLayout";
+import { useLang } from "@/app/providers/LangContext";
+import { useSite } from "@/app/providers/SiteContext";
 export default function Legal() {
-  const { lang } = useLang()
-
+  const { lang } = useLang();
+  const { site } = useSite();
+  const ar = lang === "ar";
   return (
     <PublicLayout>
-      <div className="max-w-2xl mx-auto prose prose-neutral">
-        <h1>{lang === "ar" ? "السياسات القانونية" : "Legal Policies"}</h1>
-        <p className="text-[var(--muted-foreground)]">
-          {lang === "ar"
-            ? "سيتم إضافة سياسة الخصوصية وشروط الاستخدام هنا."
-            : "Privacy policy and terms of service will be added here."}
+      <article className="panel max-w-3xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8">
+          {ar ? "الخصوصية وشروط الخدمة" : "Privacy & service terms"}
+        </h1>
+        <h2>{ar ? "بياناتك وخصوصيتك" : "Your information"}</h2>
+        <p className="whitespace-pre-wrap leading-8 text-sm mb-8">
+          {site.content[ar ? "privacy_ar" : "privacy"]}
         </p>
-      </div>
+        <h2>
+          {ar ? "طلبات السفر وعروض الأسعار" : "Travel requests and quotations"}
+        </h2>
+        <p className="whitespace-pre-wrap leading-8 text-sm">
+          {site.content[ar ? "terms_ar" : "terms"]}
+        </p>
+      </article>
     </PublicLayout>
-  )
+  );
 }

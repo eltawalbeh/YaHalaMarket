@@ -1,81 +1,47 @@
-import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
-import { useLang } from "@/app/providers/LangContext"
-import { PUBLIC_ROUTES } from "@/lib/routes"
-
+import { Link } from "react-router-dom";
+import { useLang } from "@/app/providers/LangContext";
+import { useSite } from "@/app/providers/SiteContext";
+import { LanguageToggle } from "@/components/shared/LanguageToggle";
 export function PublicNav() {
-  const { lang, setLang } = useLang()
-  const ar = lang === "ar"
-  const [scrolled, setScrolled] = useState(false)
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24)
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [])
-
+  const { lang } = useLang();
+  const { site } = useSite();
   return (
-    <header className="sticky top-0 z-40 bg-[var(--background)] pt-3 pb-2">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div
-          className={[
-            "bg-[var(--card)] rounded-full h-14 px-4 sm:px-5",
-            "flex items-center justify-between gap-3",
-            "transition-all duration-300",
-            scrolled
-              ? "shadow-[0_8px_32px_rgba(0,0,0,0.13)]"
-              : "shadow-[0_2px_10px_rgba(0,0,0,0.07)]",
-          ].join(" ")}
-        >
-          {/* Brand */}
+    <header className="public-nav">
+      <div>
+        <Link to="/" className="flex flex-col items-center">
+          {site.logo_url ? (
+            <picture>
+              <source
+                media="(max-width:640px)"
+                srcSet={site.logo_mobile_url || site.logo_url}
+              />
+              <img
+                src={site.logo_url}
+                alt={lang === "ar" ? site.brand_name_ar : site.brand_name}
+                className="max-w-[150px] h-9 object-contain"
+              />
+            </picture>
+          ) : (
+            <>
+              <strong className="text-xl">
+                {lang === "ar" ? site.brand_name_ar : site.brand_name}
+              </strong>
+              <small className="text-[10px] text-[var(--muted-foreground)]">
+                Travel & Tourism
+              </small>
+            </>
+          )}
+        </Link>
+        <div className="flex items-center gap-3">
+          <LanguageToggle />
           <Link
-            to={PUBLIC_ROUTES.market}
-            className="shrink-0 font-display text-xl font-medium text-[var(--foreground)] hover:text-[var(--primary)] transition-colors leading-none"
+            to="/plan"
+            className="rounded-xl bg-[var(--primary)] text-white px-4 py-2 text-sm"
           >
-            يا هلا
+            {lang === "ar" ? "خطط رحلتك" : "Plan a trip"} <span>→</span>
           </Link>
-
-          {/* Right side */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Language toggle — pill inside pill */}
-            <div className="flex items-center rounded-full border border-[var(--border)] overflow-hidden text-sm select-none">
-              <button
-                onClick={() => setLang("ar")}
-                aria-label="العربية"
-                className={[
-                  "px-3 py-1.5 transition-colors",
-                  ar
-                    ? "bg-[var(--foreground)] text-[var(--background)] font-medium"
-                    : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]",
-                ].join(" ")}
-              >
-                ع
-              </button>
-              <button
-                onClick={() => setLang("en")}
-                aria-label="English"
-                className={[
-                  "px-3 py-1.5 text-xs tracking-widest uppercase transition-colors",
-                  !ar
-                    ? "bg-[var(--foreground)] text-[var(--background)] font-medium"
-                    : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]",
-                ].join(" ")}
-              >
-                EN
-              </button>
-            </div>
-
-            {/* CTA */}
-            <Link
-              to="/plan"
-              className="hidden sm:inline-flex items-center gap-1.5 bg-[var(--accent)] text-[var(--accent-foreground)] rounded-full px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity shrink-0"
-            >
-              {ar ? "خطط رحلتك" : "Plan a trip"}
-              <span dir="ltr" className="text-base leading-none">→</span>
-            </Link>
-          </div>
         </div>
       </div>
     </header>
-  )
+  );
 }

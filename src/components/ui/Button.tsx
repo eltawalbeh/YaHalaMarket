@@ -1,7 +1,7 @@
-import { cx } from "@/lib/utils"
+import { cx } from "@/lib/utils";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger"
-type ButtonSize = "sm" | "md" | "lg"
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonSize = "sm" | "md" | "lg";
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
@@ -10,20 +10,21 @@ const variantClasses: Record<ButtonVariant, string> = {
     "bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:bg-[var(--muted)]",
   ghost: "bg-transparent text-[var(--foreground)] hover:bg-[var(--muted)]",
   danger: "bg-red-600 text-white hover:bg-red-700",
-}
+};
 
 const sizeClasses: Record<ButtonSize, string> = {
   sm: "px-3 py-1.5 text-sm",
   md: "px-4 py-2 text-sm",
   lg: "px-6 py-3 text-base",
-}
+};
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant
-  size?: ButtonSize
+  variant?: ButtonVariant;
+  size?: ButtonSize;
 }
 
 export function Button({
+  type = "button",
   variant = "primary",
   size = "md",
   className,
@@ -32,6 +33,7 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
+      type={type}
       className={cx(
         "inline-flex items-center justify-center gap-2 rounded-[var(--radius)] font-medium",
         "transition-opacity duration-150 focus-visible:outline-none focus-visible:ring-2",
@@ -44,5 +46,5 @@ export function Button({
     >
       {children}
     </button>
-  )
+  );
 }

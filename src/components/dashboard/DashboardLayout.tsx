@@ -1,25 +1,132 @@
-import type { ReactNode } from "react"
-import { DashboardSidebar } from "./DashboardSidebar"
-import { useAuth } from "@/app/providers/AuthContext"
-import { useLang } from "@/app/providers/LangContext"
-
+import { useEffect, useState, type ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { DashboardSidebar } from "./DashboardSidebar";
+import { useAuth } from "@/app/providers/AuthContext";
+import { useLang } from "@/app/providers/LangContext";
+import { USER_ROLES } from "@/lib/constants";
+import { offersService, leadsService } from "@/services";
+import { Icon } from "@/components/ui/Operations";
 export function DashboardLayout({ children }: { children: ReactNode }) {
-  const { user } = useAuth()
-  const { lang } = useLang()
-  const ar = lang === "ar"
+  const { user } = useAuth();
+  const { lang } = useLang();
+  const ar = lang === "ar";
+  const [search, setSearch] = useState("");
+  const [results, setResults] = useState<{ label: string; to: string }[]>([]);
+  const [searchError, setSearchError] = useState(false);
+  useEffect(() => {
+    if (search.trim().length < 2) {
+      setResults([]);
+      return;
+    }
+    let active = true;
+    const timer = setTimeout(() => {
+      Promise.all([
+        offersService.list(),
+        user?.role === "accounting" ? Promise.resolve([]) : leadsService.list(),
+      ])
+        .then(([offers, leads]) => {
+          if (!active) return;
+          const q = search.toLowerCase();
+          setSearchError(false);
+          setResults([
+            ...offers
+              .filter((o) =>
+                (o.title + " " + o.title_ar + " " + o.destination.city)
+                  .toLowerCase()
+                  .includes(q),
+              )
+              .slice(0, 5)
+              .map((o) => ({
+                label: ar ? o.title_ar : o.title,
+                to:
+                  "/dashboard/offers?search=" +
+                  encodeURIComponent(ar ? o.title_ar : o.title),
+              })),
+            ...leads
+              .filter((l) =>
+                (l.full_name + " " + l.phone + " " + l.reference_id)
+                  .toLowerCase()
+                  .includes(q),
+              )
+              .slice(0, 5)
+              .map((l) => ({
+                label: l.full_name,
+                to:
+                  "/dashboard/leads?search=" + encodeURIComponent(l.full_name),
+              })),
+          ]);
+        })
+        .catch(() => {
+          if (active) setSearchError(true);
+        });
+    }, 300);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [search, ar, user?.role]);
   return (
-    <div className="dashboard-theme min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+    <div className="dashboard-theme">
       <DashboardSidebar />
-      <div className="min-h-screen min-w-0" style={{ paddingInlineStart: "var(--sidebar-width)" }}>
-        <header className="sticky top-0 z-10 flex h-[72px] items-center justify-between gap-4 border-b border-[var(--border)] bg-white/95 px-5 backdrop-blur lg:px-8">
-          <label className="flex min-w-0 max-w-xl flex-1 items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--muted)] px-4 py-2.5">
-            <span className="text-[var(--muted-foreground)]">⌕</span>
-            <input className="w-full bg-transparent text-sm outline-none placeholder:text-[var(--muted-foreground)]" placeholder={ar ? "ابحث في الرحلات والعملاء والعروض…" : "Search trips, leads and offers…"} aria-label={ar ? "بحث" : "Search"} />
-          </label>
-          <div className="flex items-center gap-3"><div className="hidden text-end sm:block"><p className="text-sm font-semibold">{ar ? user?.full_name_ar : user?.full_name}</p><p className="text-xs text-[var(--muted-foreground)]">{ar ? "فريق العمليات" : "Operations team"}</p></div><div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#dff5ff] text-sm font-bold text-[#0875bd]">{(ar ? user?.full_name_ar : user?.full_name)?.slice(0, 1) ?? "Y"}</div></div>
+      <div className="dashboard-body">
+        <header className="dashboard-topbar">
+          <div className="global-search">
+            <Icon file="a49e4" className="absolute left-3 top-3" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label={ar ? "بحث شامل" : "Search all"}
+              placeholder={
+                ar
+                  ? "ابحث عن عميل، عرض أو رقم مرجعي…"
+                  : "Search offers, leads or reference…"
+              }
+              dir={ar ? "rtl" : "ltr"}
+            />
+            {search.length >= 2 && (
+              <div className="global-results" dir={ar ? "rtl" : "ltr"}>
+                {searchError ? (
+                  <p>{ar ? "تعذر البحث" : "Search failed"}</p>
+                ) : results.length ? (
+                  results.map((r) => (
+                    <Link key={r.to} to={r.to} onClick={() => setSearch("")}>
+                      {r.label}
+                    </Link>
+                  ))
+                ) : (
+                  <p className="p-2 text-xs">
+                    {ar ? "لا توجد نتائج" : "No results"}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+          <Link
+            to="/dashboard/settings"
+            className="flex items-center gap-3"
+            dir={ar ? "rtl" : "ltr"}
+          >
+            <div className="rounded-full w-10 h-10 bg-gradient-to-r from-[#0d95c7] to-[#16b8c6] text-white flex items-center justify-center font-bold">
+              {(ar
+                ? user?.full_name_ar || user?.full_name
+                : user?.full_name
+              )?.slice(0, 2)}
+            </div>
+            <div className="hidden sm:block">
+              <strong className="text-xs">
+                {ar ? user?.full_name_ar || user?.full_name : user?.full_name}
+              </strong>
+              <p className="text-[10px] text-[var(--muted-foreground)]">
+                {user &&
+                  (ar
+                    ? USER_ROLES[user.role].label_ar
+                    : USER_ROLES[user.role].label)}
+              </p>
+            </div>
+          </Link>
         </header>
-        <main className="mx-auto w-full max-w-[1500px] p-5 lg:p-8">{children}</main>
+        <main className="dashboard-main">{children}</main>
       </div>
     </div>
-  )
+  );
 }
