@@ -401,8 +401,8 @@ input[type="checkbox"] {
 }
 .public-nav {
   padding: 12px 24px 8px;
-  width: 940px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 940px;
   margin: auto;
 }
 .public-nav > div {
@@ -585,6 +585,12 @@ input[type="checkbox"] {
   }
 }
 @media (max-width: 760px) {
+  .public-nav {
+    padding: 8px 12px 4px;
+  }
+  .public-nav > div {
+    padding: 0 10px;
+  }
   .dashboard-theme {
     --sidebar-width: 72px;
   }

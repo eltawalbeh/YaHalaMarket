@@ -25,7 +25,7 @@ export function DashboardSidebar() {
     <aside className="dashboard-sidebar">
       <NavLink to="/" className="flex items-center justify-between gap-3">
         <img
-          src="/assets/yahala-logo-dark.png"
+          src={site.logo_url || "/assets/yahala-logo-dark.png"}
           alt={ar ? site.brand_name_ar : site.brand_name}
           className="h-9 w-auto object-contain"
         />

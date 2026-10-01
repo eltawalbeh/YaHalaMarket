@@ -22,7 +22,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
     );
   }, [site, ar]);
   return (
-    <div className="min-h-screen flex flex-col" style={{ paddingTop: "48px" }}>
+    <div className="min-h-screen flex flex-col">
       <PublicNav />
       <main className="public-container flex-1">{children}</main>
       <footer className="public-footer">
