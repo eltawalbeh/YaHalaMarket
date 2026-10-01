@@ -35,11 +35,10 @@ if (!base) {
   assert.equal(ready, true, "Vite server did not become ready.");
 }
 
-const browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
-const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+let browser;
+let page;
 const errors = [];
 const results = [];
-page.on("pageerror", (error) => errors.push(error.message));
 
 async function check(path, name) {
   await page.goto(base + path, { waitUntil: "domcontentloaded" });
@@ -54,6 +53,9 @@ async function check(path, name) {
 }
 
 try {
+  browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
+  page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  page.on("pageerror", (error) => errors.push(error.message));
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto(base + "/", { waitUntil: "domcontentloaded" });
   await page.locator("h1").first().waitFor({ timeout: 22000 });
@@ -82,6 +84,6 @@ try {
   await fs.writeFile(output + "/browser-results.json", JSON.stringify(summary, null, 2));
   console.log(JSON.stringify(summary));
 } finally {
-  await browser.close();
+  await browser?.close();
   server?.kill("SIGTERM");
 }
