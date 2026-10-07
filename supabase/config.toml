@@ -1,3 +1,5 @@
 project_id = "gmatzlnzgbbnsrtnbnag"
 [functions.market-team]
 verify_jwt = true
+[functions.telegram-market-request]
+verify_jwt = false

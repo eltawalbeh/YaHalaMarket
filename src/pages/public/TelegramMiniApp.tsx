@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { offersService, leadsService } from "@/services";
-import { errorMessage, useResource } from "@/lib/request";
-import { initTelegramMiniApp, telegramStartParam, telegramUser } from "@/lib/telegram";
+import { offersService } from "@/services";
+import { db, errorMessage, useResource } from "@/lib/request";
+import { initTelegramMiniApp, telegramStartParam, telegramUser, telegramWebApp } from "@/lib/telegram";
 import type { Offer } from "@/types";
 
 type View = "home" | "offers" | "request" | "success";
@@ -13,6 +13,7 @@ export default function TelegramMiniApp() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [reference, setReference] = useState("");
+  const [notificationStatus, setNotificationStatus] = useState<"sent" | "failed" | "not_configured" | "unknown">("unknown");
   const submissionKey = useRef(crypto.randomUUID());
   const tgUser = telegramUser();
   const [form, setForm] = useState({
@@ -61,29 +62,26 @@ export default function TelegramMiniApp() {
     setBusy(true);
     setError("");
     try {
-      const userLine = tgUser
-        ? `Telegram user: ${tgUser.id}${tgUser.username ? " @" + tgUser.username : ""}`
-        : "Telegram Mini App";
-      const lead = await leadsService.create({
-        full_name: form.name.trim(),
-        phone: form.phone.trim(),
-        email: null,
-        status: "new",
-        source: "social",
-        offer_id: selected?.id || null,
-        assigned_to: null,
-        notes: [
-          "[Source: Telegram Mini App]",
-          userLine,
-          selected ? "Package: " + selected.title : "Custom trip",
-          form.notes.trim(),
-        ].filter(Boolean).join("\n"),
-        pax_count: form.pax,
-        preferred_dates: form.when ? [form.when] : [],
-        budget_range: form.budget || null,
-        submission_key: submissionKey.current,
+      const initData = telegramWebApp()?.initData;
+      if (!initData) throw new Error("افتح النموذج من داخل Telegram لإرسال الطلب.");
+      const { data, error: invokeError } = await db().functions.invoke("telegram-market-request", {
+        body: {
+          init_data: initData,
+          full_name: form.name.trim(),
+          phone: form.phone.trim(),
+          offer_id: selected?.id || null,
+          notes: form.notes.trim(),
+          pax_count: form.pax,
+          preferred_dates: form.when ? [form.when.trim()] : [],
+          budget_range: form.budget.trim() || null,
+          submission_key: submissionKey.current,
+        },
       });
-      setReference(lead.reference_id || lead.id.slice(0, 8));
+      if (invokeError) throw invokeError;
+      const lead = data?.lead;
+      if (!lead?.id || !lead?.reference_id) throw new Error("تعذّر تأكيد تسجيل الطلب.");
+      setReference(lead.reference_id);
+      setNotificationStatus(data.notification_status || "unknown");
       setView("success");
     } catch (e) {
       setError(errorMessage(e));
@@ -190,10 +188,11 @@ export default function TelegramMiniApp() {
           <section className="panel !p-7 text-center mt-12">
             <div className="text-4xl mb-4">✅</div>
             <h2 className="text-2xl font-bold">تم تسجيل طلبك</h2>
-            <p className="text-sm text-[var(--muted-foreground)] my-4">وصل الطلب إلى نظام Ya Hala Market وسيتمكن الفريق من متابعته من لوحة الـLeads.</p>
+            <p className="text-sm text-[var(--muted-foreground)] my-4">وصل الطلب إلى نظام Ya Hala Market.</p>
+            {notificationStatus !== "sent" && <p className="text-xs text-amber-700">تم حفظ الطلب، لكن تعذّر تأكيد إشعار الفريق. احتفظ برقم المرجع للمتابعة.</p>}
             <p className="text-sm">رقم المرجع</p>
             <strong className="block text-2xl my-2" dir="ltr">{reference}</strong>
-            <button type="button" className="rounded-xl bg-[var(--primary)] text-white px-5 py-3 mt-5" onClick={() => { submissionKey.current = crypto.randomUUID(); setSelected(null); setReference(""); setView("home"); }}>
+            <button type="button" className="rounded-xl bg-[var(--primary)] text-white px-5 py-3 mt-5" onClick={() => { submissionKey.current = crypto.randomUUID(); setSelected(null); setReference(""); setNotificationStatus("unknown"); setView("home"); }}>
               العودة للرئيسية
             </button>
           </section>
