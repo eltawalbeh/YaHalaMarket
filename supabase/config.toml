@@ -1,3 +1,6 @@
 project_id = "gmatzlnzgbbnsrtnbnag"
 [functions.market-team]
 verify_jwt = true
+
+[functions.telegram-mini-app]
+verify_jwt = false

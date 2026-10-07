@@ -4,6 +4,7 @@ export const PUBLIC_ROUTES = {
   offerDetail: (slug: string) => `/offers/${slug}`,
   quote: (token: string) => `/q/${token}`,
   legal: "/legal",
+  telegram: "/telegram",
 } as const
 
 export const DASHBOARD_ROUTES = {

@@ -9,6 +9,7 @@ const Plan = lazy(() => import("@/pages/public/Plan"));
 const OfferDetail = lazy(() => import("@/pages/public/OfferDetail"));
 const Quote = lazy(() => import("@/pages/public/Quote"));
 const Legal = lazy(() => import("@/pages/public/Legal"));
+const Telegram = lazy(() => import("@/pages/public/Telegram"));
 const Login = lazy(() => import("@/pages/dashboard/Login"));
 const ResetPassword = lazy(() => import("@/pages/public/ResetPassword"));
 const DashboardHome = lazy(() => import("@/pages/dashboard/DashboardHome"));
@@ -46,6 +47,7 @@ export function AppRouter() {
           <Route path={ROUTE_PATTERNS.quote} element={<Quote />} />
           <Route path="/plan" element={<Plan />} />
           <Route path="/legal" element={<Legal />} />
+          <Route path="/telegram" element={<Telegram />} />
           <Route path={DASHBOARD_ROUTES.login} element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route element={<ProtectedRoute />}>
